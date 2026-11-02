@@ -98,10 +98,14 @@ class Repository:
             # Validate values consumed by services before allowing any write.
             for r in state.records:
                 date.fromisoformat(r['date']); number(r['amount'], integer=True)
+                if not isinstance(r['amount'],int) or any(not isinstance(r[k],str) for k in ('memo','store','product_id')):
+                    raise ValueError('내역의 금액 또는 설명 자료형 오류')
+                number(r['quantity'],integer=True)
                 if r['kind'] not in ('수입','지출') or not r['category'] or not r['id']:
                     raise ValueError('내역 형식이 잘못됐습니다.')
             for key, value in state.budgets.items():
                 month_key(key); number(value, integer=True, zero=True)
+                if not isinstance(value,int):raise ValueError('예산은 정수로 저장해야 합니다.')
             for pid,p in state.products.items():
                 if not isinstance(p,dict) or p.get('id')!=pid:raise ValueError('상품 ID 형식 오류')
                 validate_product(p)

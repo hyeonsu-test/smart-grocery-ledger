@@ -107,6 +107,7 @@ class LedgerApp(tk.Tk):
         if path:self.connect(path);self.render()
 
     def navigate(self,index):
+        if index==self.active:return
         if index!=self.active and not self.confirm_leave():return
         self.active=index;self.render()
 
@@ -183,6 +184,7 @@ class LedgerApp(tk.Tk):
         ttk.Button(row,text='검색',command=self.refresh_ledger_table).pack(side='left',anchor='s')
         s=monthly(self.repo.state,self.month)
         self.cards([('수입',money(s['income'])),('지출',money(s['expense'])),('잔액',money(s['balance'])),('식료품 잔여 예산',money(s['remaining']))])
+        ttk.Label(self.content,text='분류별 지출  '+('  ·  '.join(k+' '+money(v) for k,v in s['categories'].items()) or '아직 내역 없음'),style='Muted.TLabel').pack(anchor='w',pady=(5,0))
         self.ledger_tree=self.tree(['날짜','구분','분류','금액','메모 / 구매처'],[115,70,95,130,550],6)
         self.refresh_ledger_table()
         row=self.row();self.ledger_vars={}
@@ -451,11 +453,14 @@ class LedgerApp(tk.Tk):
         for r in result['items']:
             self.target_tree.insert('','end',iid=r['product_id'],values=(r['name'],f'{r["days"]}일',unit_money(r['basis']),unit_money(Decimal(r['target']['price'])) if r['target']['price'] else '미설정',unit_money(r['applied']),f'{len(r["matches"])}개 마트',('ON / ' if r['target']['enabled'] else 'OFF / ')+(r['last_alert'] or '없음')))
         self.target_tree.bind('<<TreeviewSelect>>',lambda e:self.select_target())
+        self.target_detail=tk.StringVar(value='상품을 선택하면 계산 기간과 조건을 충족한 마트·가격·출처를 표시합니다.')
+        ttk.Label(self.content,textvariable=self.target_detail,wraplength=1080,style='Muted.TLabel').pack(anchor='w',pady=6)
         row=self.row()
         self.target_price=self.field(row,'개인 목표 (단위 가격 / 빈칸은 프로그램 기준)','',width=40)
         self.target_enabled=tk.BooleanVar(value=False);ttk.Checkbutton(row,text='목표 알림 사용',variable=self.target_enabled).pack(side='left',anchor='s',padx=10,pady=8)
         ttk.Button(row,text='목표 저장',style='Primary.TButton',command=self.save_target).pack(side='left',anchor='s')
         ttk.Button(row,text='개인 목표 해제',command=lambda:self.save_target(True)).pack(side='left',anchor='s',padx=7)
+        ttk.Button(row,text='충족 가격 출처',command=self.target_source).pack(side='left',anchor='s')
         ttk.Label(self.content,text='목표 단위: 우유 100ml / 계란 1개 / 라면 1봉 / 쌀·두부 100g\n현재 화면의 목표 조건은 온라인 · 일반입니다. 알림은 앱이 실행 중일 때 상품당 하루 한 번 표시합니다.',style='Muted.TLabel').pack(anchor='w',pady=14)
         tk.Label(self.content,text=self.notification_text,bg='#e1f0e7',fg=GREEN,anchor='w',padx=18,pady=18,font=('맑은 고딕',11,'bold'),wraplength=1000).pack(fill='x',pady=6)
         ttk.Label(self.content,text='즐겨찾기는 상품·가격 화면에서 등록합니다. 갱신 실패 또는 오래된 가격은 알림 판단에서 제외합니다.',style='Muted.TLabel').pack(anchor='w',pady=8)
@@ -463,7 +468,16 @@ class LedgerApp(tk.Tk):
     def select_target(self):
         ids=self.target_tree.selection()
         if ids:
-            t=self.target_rows[ids[0]]['target'];self.target_price.set(t['price'] or '');self.target_enabled.set(t['enabled'])
+            row=self.target_rows[ids[0]];t=row['target'];self.target_price.set(t['price'] or '');self.target_enabled.set(t['enabled'])
+            self.target_detail.set(f'계산 기간 {row["start"]} ~ {row["end"]}\n'+(' / '.join(o['store']+' '+unit_money(o['unit_price'])+' '+o['url'] for o in row['matches']) or '현재 목표를 충족한 가격 없음'))
+
+    def target_source(self):
+        pid=self.selected(self.target_tree)
+        if not pid:return
+        offers=self.target_rows[pid]['matches']
+        if not offers:messagebox.showinfo('자료 없음','현재 목표를 충족한 가격이 없습니다.',parent=self);return
+        offer=min(offers,key=lambda o:o['unit_price'])
+        self.result(self.products.manageProducts({'action':'OPEN_LINK','url':offer['url']}),'가장 낮은 충족 단위 가격의 출처를 열었습니다.')
 
     def save_target(self,clear=False):
         pid=self.selected(self.target_tree)
