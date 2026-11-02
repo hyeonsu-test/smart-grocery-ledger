@@ -678,6 +678,16 @@ public final class ServiceTests {
               f.products.manageProducts(
                   m("action", "CONFIGURE_FEED", "store", "이마트", "path", feed.toString())),
               "OK");
+          status(
+              f.products.manageProducts(
+                  m(
+                      "action",
+                      "CONFIGURE_FEED",
+                      "store",
+                      "홈플러스",
+                      "path",
+                      f.directory.resolve("unavailable.json").toString())),
+              "OK");
           var r = f.products.manageProducts(m("action", "REFRESH"));
           status(r, "PARTIAL_FAILURE");
           eq(s(obj(f.repo.snapshot().map("sources").get("홈플러스")), "last_success"), old);
@@ -751,6 +761,151 @@ public final class ServiceTests {
           Repository reloaded = new Repository(f.file);
           check(reloaded.readError().isEmpty());
           eq(reloaded.snapshot().product("milk").get("name"), "데일리 우유 1L");
+        });
+    test(
+        "UC03 manual refresh only attempts configured sources",
+        f -> {
+          Path feed = f.directory.resolve("connected.json");
+          Files.writeString(
+              feed,
+              Json.stringify(
+                  m(
+                      "products",
+                      List.of(f.repo.snapshot().product("milk")),
+                      "offers",
+                      List.of(f.current("milk")))));
+          f.products.manageProducts(
+              m("action", "CONFIGURE_FEED", "store", "이마트", "path", feed.toString()));
+          status(f.products.manageProducts(m("action", "REFRESH")), "OK");
+          check(
+              f.repo.snapshot().offers().stream()
+                  .filter(o -> !s(o, "store").equals("이마트"))
+                  .noneMatch(o -> yes(o, "failed")));
+        });
+    test(
+        "UC03 failed feed does not invalidate independently confirmed manual prices",
+        f -> {
+          status(f.manual(f.current("milk")), "OK");
+          f.products.manageProducts(
+              m(
+                  "action",
+                  "CONFIGURE_FEED",
+                  "store",
+                  "이마트",
+                  "path",
+                  f.directory.resolve("missing.json").toString()));
+          status(
+              f.products.manageProducts(m("action", "REFRESH", "store", "이마트")), "REFRESH_FAILED");
+          var manual =
+              latest(f.repo.snapshot()).stream()
+                  .filter(o -> s(o, "method").equals("직접 입력"))
+                  .findFirst()
+                  .orElseThrow();
+          eq(validity(manual, NOW), "현재 유효");
+        });
+    test(
+        "UC03 omitted optional channel is normalized before persistence",
+        f -> {
+          var offer = f.current("milk");
+          offer.remove("channel");
+          offer.put("price", "2501");
+          status(f.manual(offer), "OK");
+          var saved =
+              f.repo.snapshot().offers().stream()
+                  .filter(o -> s(o, "price").equals("2501"))
+                  .findFirst()
+                  .orElseThrow();
+          eq(s(saved, "channel"), "온라인");
+          check(
+              rows(f.price.analyzePrices(m("mode", "COMPARE", "product_id", "milk")).get("ranked"))
+                  .stream()
+                  .anyMatch(o -> s(o, "price").equals("2501")));
+        });
+    test(
+        "UC04 newest instant wins across differing local calendar dates",
+        f -> {
+          var a = f.current("milk");
+          a.putAll(
+              m(
+                  "checked_date",
+                  "2026-11-02",
+                  "checked_at",
+                  "2026-11-02T00:00:00+14:00",
+                  "price",
+                  "3000"));
+          var b = copyMap(a);
+          b.putAll(
+              m(
+                  "checked_date",
+                  "2026-11-01",
+                  "checked_at",
+                  "2026-11-01T23:00:00-01:00",
+                  "price",
+                  "2400"));
+          status(f.manual(a), "OK");
+          status(f.manual(b), "OK");
+          f.modify(
+              st ->
+                  st.array("offers")
+                      .removeIf(
+                          o ->
+                              s(obj(o), "store").equals("이마트")
+                                  && s(obj(o), "product_id").equals("milk")
+                                  && !List.of("3000", "2400").contains(s(obj(o), "price"))));
+          var latest =
+              Data.latest(f.repo.snapshot()).stream()
+                  .filter(o -> s(o, "store").equals("이마트") && s(o, "product_id").equals("milk"))
+                  .findFirst()
+                  .orElseThrow();
+          decimal(latest.get("price"), "2400");
+        });
+    test(
+        "CR02 malformed source state fails read without overwriting",
+        f -> {
+          var broken = f.repo.snapshot().toMap();
+          obj(broken.get("sources")).put("이마트", "invalid source object");
+          String bytes = Json.stringify(broken);
+          Files.writeString(f.file, bytes);
+          Repository reopened = new Repository(f.file);
+          check(!reopened.readError().isEmpty());
+          status(reopened.saveAtomic(new AppState()), "SAVE_FAILED");
+          eq(Files.readString(f.file), bytes);
+        });
+    test(
+        "CR02 invalid persisted plan store is rejected on load",
+        f -> {
+          var broken = f.repo.snapshot().toMap();
+          obj(list(obj(broken.get("plans")).get("2026-11")).get(0))
+              .put("store", "not-a-supported-store");
+          Files.writeString(f.file, Json.stringify(broken));
+          check(!new Repository(f.file).readError().isEmpty());
+        });
+    test(
+        "UC01 CREATE cannot silently replace an existing record ID",
+        f -> {
+          var req = payment();
+          req.put("recordId", "demo-0");
+          String before = Files.readString(f.file);
+          status(f.ledger.manageLedger(req), "INVALID_INPUT");
+          eq(Files.readString(f.file), before);
+        });
+    test(
+        "UC03 past instant in a later local calendar day is accepted",
+        f -> {
+          Clock late = Clock.fixed(Instant.parse("2026-11-01T14:00:00Z"), ZoneId.of("Asia/Seoul"));
+          ProductService service = new ProductService(f.repo, new MartAdapter(), null, late);
+          var offer = f.current("milk");
+          offer.putAll(m("checked_date", "2026-11-02", "checked_at", "2026-11-02T03:59:00+14:00"));
+          status(
+              service.manageProducts(
+                  m(
+                      "action",
+                      "UPSERT_MANUAL",
+                      "product",
+                      f.repo.snapshot().product("milk"),
+                      "offer",
+                      offer)),
+              "OK");
         });
     System.out.println(
         "RESULT passed=" + passed + " failed=" + failed + " total=" + (passed + failed));

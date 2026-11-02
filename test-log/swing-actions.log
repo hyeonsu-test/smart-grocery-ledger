@@ -8,5 +8,20 @@ PASS plan save never creates an expense
 PASS favorites populate purchase target screen
 PASS target save button persists chosen unit price
 PASS test does not claim a visible screenshot
-RESULT Swing action checks passed=10 failed=0
+PASS background target refresh preserves selected row and unsaved input
+PASS preserved target draft can still be saved
+PASS unsaved budget input participates in leave/close confirmation
+PASS price estimate refresh preserves unsaved budget input
+PASS unapplied plan quantity participates in leave/close confirmation
+PASS cancel restores saved plan and clears unapplied edits
+PASS unknown-price plan displays confirmed subtotal and unknown total separately
+PASS product view exposes specification event dates URL and source status
+PASS comparison identifies product and price unit
+PASS notification contains product store unit price and source URL
+PASS product-to-plan button only creates a draft
+PASS product-to-plan navigation never creates a payment
+PASS asynchronous connected feed refresh completes
+PASS new feed product immediately appears in plan and comparison selectors
+PASS new feed price is compared without restarting app
+RESULT Swing action checks passed=25 failed=0
 OS=Windows 11 Java=21.0.9

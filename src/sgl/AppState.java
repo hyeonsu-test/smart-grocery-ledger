@@ -132,6 +132,8 @@ public final class AppState {
         product(s(item, "product_id"));
         integer(item.get("quantity"), false);
         conditions(item);
+        if (!s(item, "store").isEmpty() && !STORES.contains(s(item, "store")))
+          throw new IllegalArgumentException("계획의 마트 정보 오류");
         if (!ids.add(text(item, "itemId"))) throw new IllegalArgumentException("중복 계획 ID");
       }
     }
@@ -143,7 +145,19 @@ public final class AppState {
       bool(t.get("enabled"));
       conditions(t);
     }
-    for (Object d : map("alerts").values()) day(d);
+    for (var e : map("alerts").entrySet()) {
+      product(e.getKey());
+      day(e.getValue());
+    }
+    for (var e : map("sources").entrySet()) {
+      if (!STORES.contains(e.getKey())) throw new IllegalArgumentException("출처 마트 정보 오류");
+      var source = obj(e.getValue());
+      bool(source.get("failed"));
+      if (!(source.get("error") instanceof String))
+        throw new IllegalArgumentException("출처 오류 설명 형식 오류");
+      if (!s(source, "last_success").isEmpty())
+        java.time.OffsetDateTime.parse(s(source, "last_success"));
+    }
     if (!value("auto_attempt").isEmpty()) day(value("auto_attempt"));
     for (var e : map("feed_paths").entrySet())
       if (!STORES.contains(e.getKey()) || !(e.getValue() instanceof String))

@@ -188,11 +188,12 @@ final class Data {
   }
 
   static int observationCompare(Map<String, Object> a, Map<String, Object> b) {
+    String x = s(a, "checked_at"), y = s(b, "checked_at");
+    if (!x.isEmpty() && !y.isEmpty())
+      return OffsetDateTime.parse(x).toInstant().compareTo(OffsetDateTime.parse(y).toInstant());
     int date = s(a, "checked_date").compareTo(s(b, "checked_date"));
     if (date != 0) return date;
-    String x = s(a, "checked_at"), y = s(b, "checked_at");
-    if (x.isEmpty() || y.isEmpty()) return x.compareTo(y);
-    return OffsetDateTime.parse(x).toInstant().compareTo(OffsetDateTime.parse(y).toInstant());
+    return x.compareTo(y);
   }
 
   static List<Map<String, Object>> latest(AppState state) {

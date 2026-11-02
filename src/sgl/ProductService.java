@@ -58,12 +58,24 @@ public final class ProductService extends Service {
             "price",
             num(o.get("price"), false).toPlainString()));
     for (var e :
-        m("condition", "일반", "branch", "전체", "checked_at", "", "start", "", "end", "").entrySet())
-      o.putIfAbsent(e.getKey(), e.getValue());
+        m(
+                "channel",
+                "온라인",
+                "condition",
+                "일반",
+                "branch",
+                "전체",
+                "checked_at",
+                "",
+                "start",
+                "",
+                "end",
+                "")
+            .entrySet()) o.putIfAbsent(e.getKey(), e.getValue());
     offer(o, p);
-    if (LocalDate.parse(s(o, "checked_date")).isAfter(now().toLocalDate())
-        || (!s(o, "checked_at").isEmpty()
-            && OffsetDateTime.parse(s(o, "checked_at")).isAfter(now())))
+    if (s(o, "checked_at").isEmpty()
+        ? LocalDate.parse(s(o, "checked_date")).isAfter(now().toLocalDate())
+        : OffsetDateTime.parse(s(o, "checked_at")).isAfter(now()))
       throw new IllegalArgumentException("미래 확인 날짜/시각은 입력할 수 없습니다.");
     st.array("offers")
         .removeIf(
@@ -84,8 +96,10 @@ public final class ProductService extends Service {
    * <p>QUERY accepts category/store/channel filters. UPSERT_MANUAL requires product and offer
    * objects documented in the package overview. SET_FAVORITE requires product_id and boolean
    * isFavorite. CONFIGURE_FEED requires store and local path (empty removes). REFRESH optionally
-   * selects one store. AUTO_REFRESH attempts configured stores at most once per local day,
-   * including failed attempts. Each store is imported transactionally.
+   * selects one store; otherwise only configured stores are attempted. AUTO_REFRESH attempts
+   * configured stores at most once per local day, including failed attempts. Each store is imported
+   * transactionally. A failed feed invalidates feed observations, while independently confirmed
+   * manual observations retain their own timestamps and validity.
    *
    * @param request action and action-specific fields
    * @return status plus offers for QUERY; failures, updated IDs and target_result for updates.
@@ -151,8 +165,7 @@ public final class ProductService extends Service {
             if (auto) st.put("auto_attempt", today);
             List<String> stores = new ArrayList<>();
             if (!s(request, "store").isEmpty()) stores.add(text(request, "store"));
-            else if (auto) stores.addAll(st.map("feed_paths").keySet());
-            else stores.addAll(STORES);
+            else stores.addAll(st.map("feed_paths").keySet());
             for (String store : stores) {
               if (!STORES.contains(store)) throw new IllegalArgumentException("지원 마트를 선택하세요.");
               try {
@@ -187,7 +200,9 @@ public final class ProductService extends Service {
                     st.map("sources").containsKey(store) ? obj(st.map("sources").get(store)) : m();
                 status.putAll(m("failed", true, "error", e.getMessage()));
                 st.map("sources").put(store, status);
-                for (var o : st.offers()) if (s(o, "store").equals(store)) o.put("failed", true);
+                for (var o : st.offers())
+                  if (s(o, "store").equals(store) && !s(o, "method").equals("직접 입력"))
+                    o.put("failed", true);
               }
             }
           } else throw new IllegalArgumentException("지원하지 않는 상품 action입니다.");

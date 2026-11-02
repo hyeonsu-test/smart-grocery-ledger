@@ -39,23 +39,31 @@ public final class LedgerFrame extends JFrame {
   private final JLabel planSummary = new JLabel();
   private final JLabel priceSummary = new JLabel();
   private final JLabel targetSummary = new JLabel();
+  private final JTextArea productDetails = details(5),
+      compareDetails = details(3),
+      targetDetails = details(4);
   private final JTable recordTable = table("날짜", "구분", "분류", "금액 (원)", "메모", "마트"),
-      planTable = table("상품", "수량", "마트", "경로", "조건", "예상액 (원)"),
+      planTable = table("상품", "수량", "마트", "지점", "경로", "조건", "예상액 (원)"),
       productTable = table("관심", "상품", "마트 / 지점", "경로 / 조건", "가격 (원)", "단위 가격", "확인 시각", "상태"),
-      compareTable = table("순위", "마트 / 지점", "묶음 가격", "단위 가격", "상태"),
+      compareTable = table("순위", "상품", "마트 / 지점", "묶음 가격", "단위 가격", "상태"),
       historyTable = table("확인 날짜", "단위 가격"),
       targetTable = table("상품", "관측일", "90% 기준", "개인 목표", "적용 기준", "현재 충족", "알림", "최근 알림");
   private List<Map<String, Object>> recordRows = new ArrayList<>(),
       productRows = new ArrayList<>(),
+      compareRows = new ArrayList<>(),
       targetRows = new ArrayList<>();
   private List<Object> planDraft = new ArrayList<>();
   private boolean planDirty = false,
       recordDirty = false,
+      budgetDirty = false,
+      planFormDirty = false,
+      targetDirty = false,
       updating = false,
       changingTab = false,
       busy = false;
   private int previousTab = 0;
   private String recordId = "", purchaseId = "", planItemId = "", loadedMonth;
+  private String editingTargetId = "";
   private final JTextField recordDate = new JTextField(10),
       recordAmount = new JTextField(10),
       recordMemo = new JTextField(23),
@@ -67,6 +75,7 @@ public final class LedgerFrame extends JFrame {
       budgetAmount = new JTextField(9),
       planQty = new JTextField("1", 4),
       planCondition = new JTextField("일반", 6),
+      planBranch = new JTextField(7),
       priceCondition = new JTextField("일반", 6),
       historyBranch = new JTextField("전체", 7),
       historyStart = new JTextField(10),
@@ -113,6 +122,8 @@ public final class LedgerFrame extends JFrame {
     prices = new PriceService(repo, clock);
     month.setText(YearMonth.now(clock).toString());
     loadedMonth = month.getText();
+    planProduct.setPreferredSize(new Dimension(220, 30));
+    priceProduct.setPreferredSize(new Dimension(220, 30));
     setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
     setSize(1240, 850);
     setMinimumSize(new Dimension(1030, 720));
@@ -156,12 +167,16 @@ public final class LedgerFrame extends JFrame {
         e -> {
           if (changingTab) return;
           int next = tabs.getSelectedIndex();
-          if ((previousTab == 0 && recordDirty) || (previousTab == 1 && planDirty)) {
+          if (tabHasDraft(previousTab)) {
             changingTab = true;
             tabs.setSelectedIndex(previousTab);
             if (discard("저장하지 않은 입력을 버리고 이동할까요?")) {
               if (previousTab == 0) clearRecord();
-              else loadPlan();
+              else if (previousTab == 1) loadPlan();
+              else {
+                targetDirty = false;
+                refreshTargets();
+              }
               tabs.setSelectedIndex(next);
               previousTab = next;
             }
@@ -185,6 +200,42 @@ public final class LedgerFrame extends JFrame {
         e -> {
           if (!updating) recordDirty = true;
         });
+    budgetAmount
+        .getDocument()
+        .addDocumentListener(
+            change(
+                () -> {
+                  if (!updating) budgetDirty = true;
+                }));
+    for (JTextField field : List.of(planQty, planCondition, planBranch))
+      field
+          .getDocument()
+          .addDocumentListener(
+              change(
+                  () -> {
+                    if (!updating) planFormDirty = true;
+                  }));
+    for (JComboBox<?> box : List.of(planProduct, planStore, planChannel))
+      box.addActionListener(
+          e -> {
+            if (!updating) planFormDirty = true;
+          });
+    for (JTextField field : List.of(targetPrice, targetCondition))
+      field
+          .getDocument()
+          .addDocumentListener(
+              change(
+                  () -> {
+                    if (!updating) targetDirty = true;
+                  }));
+    targetEnabled.addActionListener(
+        e -> {
+          if (!updating) targetDirty = true;
+        });
+    targetChannel.addActionListener(
+        e -> {
+          if (!updating) targetDirty = true;
+        });
     timer =
         new javax.swing.Timer(
             60000,
@@ -198,7 +249,8 @@ public final class LedgerFrame extends JFrame {
         new WindowAdapter() {
           @Override
           public void windowClosing(WindowEvent e) {
-            if ((recordDirty || planDirty) && !discard("저장하지 않은 입력을 버리고 종료할까요?")) return;
+            if ((recordDirty || planDirty || budgetDirty || planFormDirty || targetDirty)
+                && !discard("저장하지 않은 입력을 버리고 종료할까요?")) return;
             dispose();
           }
         });
@@ -232,7 +284,10 @@ public final class LedgerFrame extends JFrame {
             e -> {
               if (!e.getValueIsAdjusting() && !updating && recordTable.getSelectedRow() >= 0) {
                 int index = recordTable.convertRowIndexToModel(recordTable.getSelectedRow());
-                if (recordDirty && !discard("입력 중인 내용을 버리고 선택 내역을 불러올까요?")) return;
+                if (recordDirty && !discard("입력 중인 내용을 버리고 선택 내역을 불러올까요?")) {
+                  restoreSelection(recordTable, recordRows, "id", recordId);
+                  return;
+                }
                 loadRecord(recordRows.get(index));
               }
             });
@@ -263,7 +318,7 @@ public final class LedgerFrame extends JFrame {
   private JPanel budgetPage() {
     JPanel root = page("식비 예산과 장보기 계획", "장보기 계획은 실제 지출에 합산되지 않습니다. 수량·예산을 입력한 뒤 각각 저장하세요.");
     JPanel budgetBar = flow();
-    budgetBar.add(new JLabel("가계부 선택 월: "));
+    budgetBar.add(new JLabel("월 식비 예산: "));
     budgetBar.add(budgetAmount);
     budgetBar.add(new JLabel("원"));
     budgetBar.add(
@@ -282,6 +337,7 @@ public final class LedgerFrame extends JFrame {
                           "draftPlan",
                           planDraft));
               if (accepted(r)) {
+                budgetDirty = false;
                 showPlan(r);
                 refreshLedger();
               }
@@ -293,17 +349,25 @@ public final class LedgerFrame extends JFrame {
         .getSelectionModel()
         .addListSelectionListener(
             e -> {
-              if (!e.getValueIsAdjusting() && planTable.getSelectedRow() >= 0) {
+              if (!e.getValueIsAdjusting() && !updating && planTable.getSelectedRow() >= 0) {
+                if (planFormDirty && !discard("아직 적용하지 않은 항목 입력을 버릴까요?")) {
+                  restoreSelection(planTable, rows(planDraft), "itemId", planItemId);
+                  return;
+                }
                 var item =
                     obj(
                         planDraft.get(
                             planTable.convertRowIndexToModel(planTable.getSelectedRow())));
                 planItemId = s(item, "itemId");
+                updating = true;
                 select(planProduct, s(item, "product_id"));
                 planQty.setText(s(item, "quantity"));
                 planStore.setSelectedItem(s(item, "store").isEmpty() ? "전체" : s(item, "store"));
                 planChannel.setSelectedItem(def(item, "channel", "온라인"));
                 planCondition.setText(def(item, "condition", "일반"));
+                planBranch.setText(s(item, "branch"));
+                updating = false;
+                planFormDirty = false;
               }
             });
     JPanel form = flow();
@@ -313,6 +377,9 @@ public final class LedgerFrame extends JFrame {
     form.add(planStore);
     form.add(planChannel);
     form.add(planCondition);
+    planBranch.setToolTipText("지점 조건: 비우면 해당 마트의 모든 지점");
+    form.add(new JLabel("지점"));
+    form.add(planBranch);
     form.add(
         button(
             "항목 적용",
@@ -334,12 +401,15 @@ public final class LedgerFrame extends JFrame {
                       "channel",
                       selected(planChannel),
                       "condition",
-                      planCondition.getText());
+                      planCondition.getText(),
+                      "branch",
+                      planBranch.getText());
               if (!planItemId.isEmpty()) req.put("itemId", planItemId);
               var r = budget.manageBudgetPlan(req);
               if (accepted(r)) {
                 showPlan(r);
                 planDirty = true;
+                planFormDirty = false;
                 planItemId = "";
                 planTable.clearSelection();
               }
@@ -377,6 +447,10 @@ public final class LedgerFrame extends JFrame {
         button(
             "계획 저장",
             () -> {
+              if (planFormDirty) {
+                error("수정한 상품·수량·조건은 먼저 항목 적용을 누른 뒤 계획을 저장하세요.");
+                return;
+              }
               var r =
                   budget.manageBudgetPlan(
                       m("action", "SAVE_PLAN", "month", loadedMonth, "draftPlan", planDraft));
@@ -390,7 +464,7 @@ public final class LedgerFrame extends JFrame {
         button(
             "변경 취소",
             () -> {
-              if (!planDirty || discard("저장하지 않은 계획을 취소할까요?")) loadPlan();
+              if (!tabHasDraft(1) || discard("저장하지 않은 예산과 계획 입력을 취소할까요?")) loadPlan();
             }));
     root.add(buttons);
     return root;
@@ -408,7 +482,19 @@ public final class LedgerFrame extends JFrame {
     filters.add(button("JSON 피드 연결", this::configureFeed));
     filters.add(button("연결 피드 갱신", () -> refreshFeed(false)));
     root.add(filters);
-    root.add(scroll(productTable, 390));
+    root.add(scroll(productTable, 270));
+    productTable
+        .getSelectionModel()
+        .addListSelectionListener(
+            e -> {
+              if (!e.getValueIsAdjusting() && productTable.getSelectedRow() >= 0)
+                productDetails.setText(
+                    describeOffer(
+                        productRows.get(
+                            productTable.convertRowIndexToModel(productTable.getSelectedRow())),
+                        true));
+            });
+    root.add(new JScrollPane(productDetails));
     JPanel buttons = flow();
     buttons.add(
         button(
@@ -435,15 +521,22 @@ public final class LedgerFrame extends JFrame {
             "출처 원문 열기",
             () -> {
               var row = selectedProduct();
-              if (row != null)
-                run(
-                    () -> {
-                      if (!Desktop.isDesktopSupported())
-                        throw new IllegalStateException("브라우저 실행을 지원하지 않습니다. " + s(row, "url"));
-                      Desktop.getDesktop().browse(URI.create(url(row.get("url"))));
-                    });
+              if (row != null) openSource(row);
+            }));
+    buttons.add(
+        button(
+            "출처 주소 복사",
+            () -> {
+              var row = selectedProduct();
+              if (row != null) {
+                Toolkit.getDefaultToolkit()
+                    .getSystemClipboard()
+                    .setContents(new java.awt.datatransfer.StringSelection(s(row, "url")), null);
+                status.setText("선택 상품의 출처 주소를 복사했습니다.");
+              }
             }));
     buttons.add(button("실제 구매 기록", this::purchase));
+    buttons.add(button("장보기 추가", this::addProductToPlan));
     root.add(buttons);
     JTextArea note =
         new JTextArea(
@@ -467,7 +560,19 @@ public final class LedgerFrame extends JFrame {
     filters.add(priceCondition);
     filters.add(button("단위 가격 비교", this::refreshCompare));
     root.add(filters);
-    root.add(scroll(compareTable, 175));
+    root.add(scroll(compareTable, 145));
+    compareTable
+        .getSelectionModel()
+        .addListSelectionListener(
+            e -> {
+              if (!e.getValueIsAdjusting() && compareTable.getSelectedRow() >= 0)
+                compareDetails.setText(
+                    describeOffer(
+                        compareRows.get(
+                            compareTable.convertRowIndexToModel(compareTable.getSelectedRow())),
+                        false));
+            });
+    root.add(new JScrollPane(compareDetails));
     JPanel history = flow();
     history.add(historyStore);
     history.add(historyBranch);
@@ -481,8 +586,8 @@ public final class LedgerFrame extends JFrame {
     root.add(metric(priceSummary));
     JPanel plots = new JPanel(new GridLayout(1, 2, 12, 0));
     plots.setOpaque(false);
-    plots.add(scroll(historyTable, 200));
-    chart.setPreferredSize(new Dimension(430, 200));
+    plots.add(scroll(historyTable, 170));
+    chart.setPreferredSize(new Dimension(430, 170));
     plots.add(chart);
     root.add(plots);
     return root;
@@ -492,20 +597,40 @@ public final class LedgerFrame extends JFrame {
     JPanel root =
         page("구매 기준과 목표 알림", "직전 28일의 날짜별 평균 × 90% · 최소 관측 4일 · 개인 목표 우선 · 상품별 하루 한 번 앱 안 알림");
     root.add(metric(targetSummary));
-    root.add(scroll(targetTable, 340));
+    root.add(scroll(targetTable, 240));
+    targetTable.setDefaultRenderer(
+        Object.class,
+        new DefaultTableCellRenderer() {
+          @Override
+          public Component getTableCellRendererComponent(
+              JTable table, Object value, boolean selected, boolean focus, int row, int col) {
+            Component c =
+                super.getTableCellRendererComponent(table, value, selected, focus, row, col);
+            if (!selected) {
+              boolean reached =
+                  !Data.list(targetRows.get(table.convertRowIndexToModel(row)).get("matches"))
+                      .isEmpty();
+              c.setBackground(reached ? new Color(220, 241, 226) : Color.WHITE);
+              c.setForeground(INK);
+            }
+            return c;
+          }
+        });
     targetTable
         .getSelectionModel()
         .addListSelectionListener(
             e -> {
-              if (!e.getValueIsAdjusting() && targetTable.getSelectedRow() >= 0) {
+              if (!e.getValueIsAdjusting() && !updating && targetTable.getSelectedRow() >= 0) {
                 var row =
                     targetRows.get(
                         targetTable.convertRowIndexToModel(targetTable.getSelectedRow()));
-                var t = obj(row.get("target"));
-                targetPrice.setText(s(t, "price"));
-                targetEnabled.setSelected(yes(t, "enabled"));
-                targetChannel.setSelectedItem(def(t, "channel", "온라인"));
-                targetCondition.setText(def(t, "condition", "일반"));
+                if (targetDirty
+                    && !s(row, "product_id").equals(editingTargetId)
+                    && !discard("저장하지 않은 목표 설정을 버릴까요?")) {
+                  restoreSelection(targetTable, targetRows, "product_id", editingTargetId);
+                  return;
+                }
+                loadTargetForm(row);
               }
             });
     JPanel form = flow();
@@ -531,6 +656,7 @@ public final class LedgerFrame extends JFrame {
               }
             }));
     root.add(actions);
+    root.add(new JScrollPane(targetDetails));
     root.add(new JLabel("목표가를 비우고 저장하면 4주 기준을 사용합니다. 앱을 종료한 동안에는 알림이 발생하지 않습니다."));
     return root;
   }
@@ -540,7 +666,7 @@ public final class LedgerFrame extends JFrame {
         () -> {
           String requested = month(month.getText());
           if (!requested.equals(loadedMonth)
-              && (recordDirty || planDirty)
+              && (recordDirty || planDirty || budgetDirty || planFormDirty)
               && !discard("월을 변경하면 저장하지 않은 입력과 계획을 취소합니다. 계속할까요?")) {
             month.setText(loadedMonth);
             return;
@@ -686,8 +812,17 @@ public final class LedgerFrame extends JFrame {
       showPlan(r);
       planDirty = false;
       planItemId = "";
+      updating = true;
       Object amount = obj(r.get("summary")).get("budget");
       budgetAmount.setText(amount == null ? "" : amount.toString());
+      planQty.setText("1");
+      planStore.setSelectedItem("전체");
+      planChannel.setSelectedItem("온라인");
+      planCondition.setText("일반");
+      planBranch.setText("");
+      updating = false;
+      budgetDirty = false;
+      planFormDirty = false;
     }
   }
 
@@ -699,6 +834,7 @@ public final class LedgerFrame extends JFrame {
 
   private void showPlan(Map<String, Object> r) {
     planDraft = Data.list(r.get("draftPlan"));
+    updating = true;
     clear(planTable);
     for (var item : rows(r.get("items")))
       add(
@@ -706,22 +842,29 @@ public final class LedgerFrame extends JFrame {
           s(item, "name"),
           s(item, "quantity"),
           s(item, "store").isEmpty() ? "최저 유효가" : s(item, "store"),
+          s(item, "branch").isEmpty() ? "전체 지점" : s(item, "branch"),
           def(item, "channel", "온라인"),
           def(item, "condition", "일반"),
           money(item.get("estimate")));
+    restoreSelection(planTable, rows(planDraft), "itemId", planItemId);
+    updating = false;
     var a = obj(r.get("summary"));
     planSummary.setText(
         "<html>"
             + loadedMonth
             + " 예산 <b>"
-            + money(a.get("budget"))
-            + "</b>원 · 식비 잔여 <b>"
+            + (a.get("budget") == null ? "미설정" : money(a.get("budget")) + "원")
+            + "</b> · 식비 잔여 <b>"
             + money(a.get("remaining"))
-            + "</b>원<br>계획 예상액 <b>"
-            + money(r.get("totalEstimate"))
+            + "</b>원<br>확인된 소계 <b>"
+            + money(r.get("validSubtotal"))
             + "</b>원 · 가격 미확정 "
             + r.get("unknownCount")
-            + "개 · 예상 초과액 <b>"
+            + "개<br>계획 총액 <b>"
+            + money(r.get("totalEstimate"))
+            + "</b>원 · 예상 잔액 <b>"
+            + money(r.get("projectedBalance"))
+            + "</b>원 · 초과액 <b>"
             + money(r.get("excess"))
             + "</b>원</html>");
   }
@@ -757,12 +900,23 @@ public final class LedgerFrame extends JFrame {
     StringJoiner states = new StringJoiner(" | ");
     for (var e : obj(r.get("sources")).entrySet()) {
       var source = obj(e.getValue());
-      if (yes(source, "failed")) states.add(e.getKey() + ": " + s(source, "error"));
+      states.add(
+          e.getKey()
+              + ": "
+              + (yes(source, "failed") ? "갱신 실패" : "성공")
+              + " / 최근 성공 "
+              + (s(source, "last_success").isEmpty() ? "없음" : s(source, "last_success")));
     }
     status.setText(
         states.length() > 0
-            ? states.toString()
-            : "상품 " + productRows.size() + "개 가격 정보 · 직접 입력 / JSON 피드");
+            ? "가격 정보 " + productRows.size() + "개 · 출처별 갱신 결과와 최근 성공 시각은 선택 상품 상세에서 확인"
+            : "가격 정보 " + productRows.size() + "개 · 직접 입력 / JSON 피드");
+    status.setToolTipText(states.toString());
+    productDetails.setText(
+        productRows.isEmpty()
+            ? "조회 결과가 없습니다. 조건을 바꾸거나 가격을 직접 입력하세요."
+            : "상품 행을 선택하면 규격·행사·출처를 확인할 수 있습니다.");
+    if (!productRows.isEmpty()) productTable.setRowSelectionInterval(0, 0);
   }
 
   private Map<String, Object> selectedProduct() {
@@ -789,6 +943,41 @@ public final class LedgerFrame extends JFrame {
     changingTab = false;
     recordDirty = true;
     status.setText("실제 결제 총액과 수량을 확인한 뒤 내역 저장을 누르세요. 배송비는 직접 반영하세요.");
+  }
+
+  private void addProductToPlan() {
+    var row = selectedProduct();
+    if (row == null) return;
+    var r =
+        budget.manageBudgetPlan(
+            m(
+                "action",
+                "UPSERT_ITEM",
+                "month",
+                loadedMonth,
+                "draftPlan",
+                planDraft,
+                "product_id",
+                s(row, "product_id"),
+                "quantity",
+                1,
+                "store",
+                s(row, "store"),
+                "branch",
+                s(row, "branch"),
+                "channel",
+                s(row, "channel"),
+                "condition",
+                def(row, "condition", "일반")));
+    if (accepted(r)) {
+      showPlan(r);
+      planDirty = true;
+      changingTab = true;
+      tabs.setSelectedIndex(1);
+      previousTab = 1;
+      changingTab = false;
+      status.setText("선택 상품을 장보기 초안에 추가했습니다. 계획 저장 전에는 파일을 변경하지 않습니다.");
+    }
   }
 
   private void configureFeed() {
@@ -838,17 +1027,19 @@ public final class LedgerFrame extends JFrame {
         busy = false;
         try {
           var r = get();
+          fillProducts();
           refreshProducts();
           updatePlanEstimate();
           refreshCompare();
+          refreshHistory();
           refreshTargets();
-          if (r.get("target_result") instanceof Map<?, ?>)
-            notifyTargets(obj(r.get("target_result")));
           String st = s(r, "status");
           if (!List.of("OK", "PARTIAL_FAILURE", "REFRESH_FAILED").contains(st)) accepted(r);
           else if (!st.equals("OK"))
             status.setText("일부 출처 갱신 실패: " + Json.stringify(r.get("failures")));
           else status.setText("피드 갱신 완료 · 원래 확인 시각을 유지했습니다.");
+          if (r.get("target_result") instanceof Map<?, ?>)
+            notifyTargets(obj(r.get("target_result")));
         } catch (Exception e) {
           error("갱신 실패: " + e.getMessage());
         }
@@ -858,6 +1049,8 @@ public final class LedgerFrame extends JFrame {
 
   private void fillProducts() {
     AppState st = repo.snapshot();
+    boolean previous = updating;
+    updating = true;
     for (JComboBox<Choice> box : List.of(planProduct, priceProduct)) {
       String selected = chosen(box);
       box.removeAllItems();
@@ -867,7 +1060,8 @@ public final class LedgerFrame extends JFrame {
       }
       select(box, selected);
     }
-    if (st.demo()) historyBranch.setText("시연 지점");
+    if (st.demo() && historyBranch.getText().equals("전체")) historyBranch.setText("시연 지점");
+    updating = previous;
   }
 
   private void refreshCompare() {
@@ -887,24 +1081,37 @@ public final class LedgerFrame extends JFrame {
                 "condition",
                 priceCondition.getText()));
     if (!accepted(r)) return;
+    compareRows = new ArrayList<>();
     clear(compareTable);
     int rank = 1;
-    for (var o : rows(r.get("ranked")))
+    for (var o : rows(r.get("ranked"))) {
+      compareRows.add(o);
       add(
           compareTable,
           rank++,
+          s(o, "name"),
           s(o, "store") + " / " + s(o, "branch"),
           money(o.get("price")),
-          money(o.get("unit_price")),
+          money(o.get("unit_price"))
+              + " / "
+              + unitLabel(repo.snapshot().product(s(o, "product_id"))),
           s(o, "validity"));
-    for (var o : rows(r.get("excluded")))
+    }
+    for (var o : rows(r.get("excluded"))) {
+      compareRows.add(o);
       add(
           compareTable,
           "제외",
+          s(o, "name"),
           s(o, "store") + " / " + s(o, "branch"),
           money(o.get("price")),
-          money(o.get("unit_price")),
+          money(o.get("unit_price"))
+              + " / "
+              + unitLabel(repo.snapshot().product(s(o, "product_id"))),
           s(o, "validity"));
+    }
+    compareDetails.setText(compareRows.isEmpty() ? "비교 가능한 가격이 없습니다. 상품과 판매 경로·조건을 확인하세요." : "");
+    if (!compareRows.isEmpty()) compareTable.setRowSelectionInterval(0, 0);
   }
 
   private void refreshHistory() {
@@ -944,7 +1151,8 @@ public final class LedgerFrame extends JFrame {
             + money(r.get("max"))
             + " · 평균 "
             + money(r.get("mean"))
-            + "원 / 단위");
+            + "원 / "
+            + unitLabel(repo.snapshot().product(chosen(priceProduct))));
     chart.setRows(rows(r.get("rows")));
   }
 
@@ -954,6 +1162,7 @@ public final class LedgerFrame extends JFrame {
             m("action", "VIEW", "product_ids", repo.snapshot().array("favorites")));
     if (!accepted(r)) return;
     targetRows = rows(r.get("items"));
+    updating = true;
     clear(targetTable);
     for (var row : targetRows) {
       var t = obj(row.get("target"));
@@ -967,6 +1176,18 @@ public final class LedgerFrame extends JFrame {
           Data.list(row.get("matches")).isEmpty() ? "미충족" : "충족",
           yes(t, "enabled") ? "켜짐" : "꺼짐",
           s(row, "last_alert"));
+    }
+    restoreSelection(targetTable, targetRows, "product_id", editingTargetId);
+    updating = false;
+    if (!targetDirty) {
+      if (targetTable.getSelectedRow() >= 0)
+        loadTargetForm(
+            targetRows.get(targetTable.convertRowIndexToModel(targetTable.getSelectedRow())));
+      else if (!targetRows.isEmpty()) targetTable.setRowSelectionInterval(0, 0);
+      else {
+        editingTargetId = "";
+        targetDetails.setText("즐겨찾기 상품을 등록하면 구매 기준과 목표를 설정할 수 있습니다.");
+      }
     }
     targetSummary.setText(
         "즐겨찾기 "
@@ -999,7 +1220,10 @@ public final class LedgerFrame extends JFrame {
                 selected(targetChannel),
                 "condition",
                 targetCondition.getText()));
-    if (accepted(r)) refreshTargets();
+    if (accepted(r)) {
+      targetDirty = false;
+      refreshTargets();
+    }
   }
 
   private void notifyTargets(Map<String, Object> r) {
@@ -1009,14 +1233,158 @@ public final class LedgerFrame extends JFrame {
     }
     List<Object> notes = Data.list(r.getOrDefault("notifications", new ArrayList<>()));
     if (!notes.isEmpty()) {
-      StringJoiner text = new StringJoiner("\n");
-      for (var n : rows(notes)) text.add(s(n, "name") + " : 목표 단위 가격에 도달했습니다.");
-      JOptionPane.showMessageDialog(
-          this,
-          text + "\n당일 같은 상품의 알림은 다시 표시하지 않습니다.",
-          "구매 목표 알림",
-          JOptionPane.INFORMATION_MESSAGE);
+      showText("구매 목표 알림", notificationText(notes));
     }
+  }
+
+  private String notificationText(List<Object> notes) {
+    StringJoiner text = new StringJoiner("\n\n");
+    for (var n : rows(notes)) {
+      StringBuilder detail = new StringBuilder(s(n, "name") + " : 목표 단위 가격 도달");
+      for (var offer : rows(n.get("matches"))) {
+        var p = repo.snapshot().product(s(offer, "product_id"));
+        detail
+            .append("\n")
+            .append(s(offer, "store"))
+            .append(" / ")
+            .append(s(offer, "branch"))
+            .append(" · ")
+            .append(money(offer.get("unit_price")))
+            .append("원 / ")
+            .append(unitLabel(p))
+            .append(" (상품 ")
+            .append(money(offer.get("price")))
+            .append("원)")
+            .append("\n")
+            .append(s(offer, "url"));
+      }
+      text.add(detail);
+    }
+    return text + "\n\n당일 같은 상품은 다시 알리지 않습니다. 주소를 선택해 복사할 수 있습니다.";
+  }
+
+  private void loadTargetForm(Map<String, Object> row) {
+    updating = true;
+    var t = obj(row.get("target"));
+    editingTargetId = s(row, "product_id");
+    targetPrice.setText(s(t, "price"));
+    targetEnabled.setSelected(yes(t, "enabled"));
+    targetChannel.setSelectedItem(def(t, "channel", "온라인"));
+    targetCondition.setText(def(t, "condition", "일반"));
+    updating = false;
+    targetDirty = false;
+    var p = repo.snapshot().product(editingTargetId);
+    String explanation =
+        row.get("basis") == null
+            ? "관측 4일 미만: 평균 기준을 만들지 않습니다. 개인 목표가 있으면 우선 적용합니다."
+            : "관측일 평균 " + money(row.get("mean")) + "원 × 90% = " + money(row.get("basis")) + "원";
+    StringJoiner matches = new StringJoiner(" · ");
+    for (var offer : rows(row.get("matches")))
+      matches.add(s(offer, "store") + " " + money(offer.get("unit_price")) + "원");
+    targetDetails.setText(
+        s(row, "name")
+            + " / "
+            + unitLabel(p)
+            + " 단위\n"
+            + explanation
+            + "\n"
+            + (matches.length() == 0
+                ? "현재 기준 충족 가격 없음: 유효성·판매 경로·조건·목표를 확인하세요."
+                : "기준 충족: " + matches)
+            + "\n미확인·만료·오래됨·갱신 실패 가격은 비교와 알림에서 제외합니다.");
+  }
+
+  private String describeOffer(Map<String, Object> offer, boolean sourceState) {
+    var p = repo.snapshot().product(s(offer, "product_id"));
+    String text =
+        s(p, "name")
+            + " · "
+            + s(p, "brand")
+            + " / "
+            + s(p, "spec")
+            + " / "
+            + s(p, "size")
+            + s(p, "unit")
+            + " × "
+            + s(p, "pack_count")
+            + "묶음\n"
+            + s(offer, "store")
+            + " / "
+            + s(offer, "branch")
+            + " · "
+            + s(offer, "channel")
+            + " / "
+            + def(offer, "condition", "일반")
+            + " · "
+            + money(offer.get("price"))
+            + "원 ("
+            + money(offer.get("unit_price"))
+            + "원 / "
+            + unitLabel(p)
+            + ")\n행사 "
+            + (s(offer, "start").isEmpty() ? "시작일 없음" : s(offer, "start"))
+            + " ~ "
+            + (s(offer, "end").isEmpty() ? "종료일 없음" : s(offer, "end"))
+            + " · 확인 "
+            + (s(offer, "checked_at").isEmpty()
+                ? s(offer, "checked_date") + " (시각 없음)"
+                : s(offer, "checked_at"))
+            + " · "
+            + s(offer, "method")
+            + "\n출처 "
+            + s(offer, "url");
+    if (sourceState) {
+      Object state = repo.snapshot().map("sources").get(s(offer, "store"));
+      if (state instanceof Map<?, ?>) {
+        var source = obj(state);
+        text +=
+            "\n피드 최근 성공 "
+                + (s(source, "last_success").isEmpty() ? "없음" : s(source, "last_success"))
+                + (yes(source, "failed") ? " · 갱신 실패: " + s(source, "error") : " · 갱신 성공");
+      } else text += "\n연결 피드 갱신 기록 없음 · 직접 확인 가격은 자체 확인 시각으로 판정합니다.";
+    }
+    return text;
+  }
+
+  private void openSource(Map<String, Object> row) {
+    try {
+      if (!Desktop.isDesktopSupported() || !Desktop.getDesktop().isSupported(Desktop.Action.BROWSE))
+        throw new IllegalStateException("브라우저 실행을 지원하지 않습니다.");
+      Desktop.getDesktop().browse(URI.create(url(row.get("url"))));
+    } catch (Exception e) {
+      showText(
+          "링크를 열지 못했습니다",
+          "다음 주소를 선택해 복사하거나 출처 주소 복사 버튼을 사용하세요.\n" + s(row, "url") + "\n" + e.getMessage());
+    }
+  }
+
+  private void showText(String title, String text) {
+    JTextArea area = details(10);
+    area.setText(text);
+    area.setCaretPosition(0);
+    JScrollPane pane = new JScrollPane(area);
+    pane.setPreferredSize(new Dimension(680, 300));
+    JOptionPane.showMessageDialog(this, pane, title, JOptionPane.INFORMATION_MESSAGE);
+  }
+
+  private boolean tabHasDraft(int tab) {
+    return tab == 0
+        ? recordDirty
+        : tab == 1 ? planDirty || budgetDirty || planFormDirty : tab == 4 && targetDirty;
+  }
+
+  private void restoreSelection(
+      JTable table, List<Map<String, Object>> rows, String key, String id) {
+    boolean previous = updating;
+    updating = true;
+    table.clearSelection();
+    for (int i = 0; i < rows.size(); i++)
+      if (!id.isEmpty() && s(rows.get(i), key).equals(id)) {
+        int view = table.convertRowIndexToView(i);
+        table.setRowSelectionInterval(view, view);
+        break;
+      }
+    updating = previous;
   }
 
   private void manualDialog() {
@@ -1176,7 +1544,7 @@ public final class LedgerFrame extends JFrame {
     p.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
     label.setForeground(ACCENT);
     p.add(label);
-    p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
+    p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 92));
     return p;
   }
 
@@ -1245,13 +1613,24 @@ public final class LedgerFrame extends JFrame {
   }
 
   private static JComboBox<String> combo(String... values) {
-    return new JComboBox<>(values);
+    JComboBox<String> box = new JComboBox<>(values);
+    box.setPreferredSize(new Dimension(Math.max(105, box.getPreferredSize().width + 18), 30));
+    return box;
   }
 
   private static JComboBox<String> all(List<String> values) {
     List<String> v = new ArrayList<>(List.of("전체"));
     v.addAll(values);
-    return new JComboBox<>(v.toArray(String[]::new));
+    return combo(v.toArray(String[]::new));
+  }
+
+  private static JTextArea details(int lines) {
+    JTextArea area = new JTextArea(lines, 70);
+    area.setEditable(false);
+    area.setLineWrap(true);
+    area.setWrapStyleWord(true);
+    area.setMargin(new Insets(7, 9, 7, 9));
+    return area;
   }
 
   private static String selected(JComboBox<?> c) {
@@ -1360,7 +1739,10 @@ public final class LedgerFrame extends JFrame {
       d.setColor(ACCENT);
       int px = 0, py = 0;
       for (int i = 0; i < rows.size(); i++) {
-        int x = left + (rows.size() == 1 ? w / 2 : i * w / (rows.size() - 1)),
+        long first = LocalDate.parse(s(rows.get(0), "date")).toEpochDay();
+        long last = LocalDate.parse(s(rows.get(rows.size() - 1), "date")).toEpochDay();
+        long current = LocalDate.parse(s(rows.get(i), "date")).toEpochDay();
+        int x = left + (last == first ? w / 2 : (int) ((current - first) * w / (last - first))),
             y =
                 top
                     + h

@@ -21,9 +21,9 @@ public final class LedgerService extends Service {
    * Executes CREATE, UPDATE, DELETE or SEARCH.
    *
    * <p>CREATE/UPDATE require date, kind, category, positive integer amount; UPDATE/DELETE require
-   * recordId. DELETE requires confirmed=true. SEARCH accepts month (YYYY-MM), category and keyword.
-   * Optional purchase fields: product_id, store, quantity, memo. A linked purchase always becomes a
-   * food expense.
+   * recordId; CREATE rejects a nonempty recordId. DELETE requires confirmed=true. SEARCH accepts
+   * month (YYYY-MM), category and keyword. Optional purchase fields: product_id, store, quantity,
+   * memo. A linked purchase always becomes a food expense.
    *
    * @param request action and fields described above
    * @return status, records and unfiltered monthly summary for SEARCH; affected months after a
@@ -37,6 +37,8 @@ public final class LedgerService extends Service {
           AppState st = repo.snapshot();
           String action = s(request, "action");
           if (yes(request, "cancelled")) return m("status", "CANCELLED");
+          if (action.equals("CREATE") && !s(request, "recordId").isEmpty())
+            throw new IllegalArgumentException("기존 내역 ID로 새 내역을 등록할 수 없습니다. UPDATE를 사용하세요.");
           String mon = month(def(request, "month", now().toLocalDate().toString().substring(0, 7)));
           if (action.equals("SEARCH")) {
             List<Object> found = new ArrayList<>();

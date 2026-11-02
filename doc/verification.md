@@ -1,15 +1,15 @@
 # Java 베타 검증 기록
 
-검증 기록 시각: 2026-11-02T16:46:36+09:00 (Asia/Seoul). 실제 실행한 테스트 로그를 `test-log/`에 보관한다.
+검증 기록 시각: 2026-11-02T17:40:40+09:00 (Asia/Seoul). 실제 실행한 테스트 로그를 `test-log/`에 보관한다.
 
 | 환경 | 검증 | 결과 |
 |---|---|---|
-| Windows 11 x64 / Temurin 21.0.9 | 서비스 회귀 테스트 | 46개 통과, 실패 0 |
-| Windows 11 x64 / Temurin 21.0.9 | Swing 컴포넌트 내부 액션 검사 | 10항목 통과, 실패 0 |
+| Windows 11 x64 / Temurin 21.0.9 | 서비스 회귀 테스트 | 54개 통과, 실패 0 |
+| Windows 11 x64 / Temurin 21.0.9 | Swing 컴포넌트 내부 액션 검사 | 25항목 통과, 실패 0 |
 | Windows 11 x64 / Temurin 21.0.9 | 실제 JAR 창과 5개 탭 | 실행 및 시각 확인, 원본 캡처 보관 |
 | Windows 11 x64 / Oracle Java 26 | 동일 JAR 실행·5개 서비스·저장/재읽기·내장 Javadoc | 통과 |
 | Ubuntu 26.04 LTS / WSL2 Linux / Temurin 17.0.17 | 동일 JAR 실행·5개 서비스·저장/재읽기·내장 Javadoc | 통과, 화면 없는 실행 |
-| Ubuntu 26.04 LTS / WSL2 Linux / Temurin 17.0.17 | 서비스 회귀 테스트 | 46개 통과, 실패 0 |
+| Ubuntu 26.04 LTS / WSL2 Linux / Temurin 17.0.17 | 서비스 회귀 테스트 | 54개 통과, 실패 0 |
 | macOS | 실제 실행 | 미검증 |
 
 Linux 결과는 실제 Linux Java 프로세스의 파일 저장·서비스 실행 검사다. Linux GUI 및 macOS 실행이 통과했다고 주장하지 않는다. 모든 플랫폼의 동작을 보장한다는 뜻도 아니다.
@@ -31,6 +31,8 @@ Swing 검사는 화면 5개 생성, 이력 9일 표시, 가계부 저장 버튼�
 
 JDK 21.0.9에서 `javac --release 17 -Xlint:all,-serial -Werror`로 컴파일했다. Javadoc은 `-Xdoclint:all -Werror`로 생성했다. 외부 런타임·테스트 라이브러리는 없으며 Javadoc은 실행 JAR에 내장했다. 원자적 파일 교체가 지원되지 않는 환경에서는 안전하게 저장 실패를 반환한다.
 
-검증된 JAR SHA-256: `4e345e6d30576c9f205b2629a46c219c9693c51bd4e762ae166b909a2048b866`. 최종 배포 시 `release-manifest.json`과 일치하는지 확인한다.
+검증된 JAR SHA-256: `6481866cc2307e29e686dca3a6a31d02612ae05cb3010be4b37ae616eca49faf`. 최종 배포 시 `release-manifest.json`과 일치하는지 확인한다.
 
 실제 마트 웹 수집, macOS 실행, Linux GUI, 앱을 종료한 동안의 알림은 이 검증 범위에 포함되지 않는다. 온라인 가격 피드는 사용자가 지정한 로컬 JSON 파일을 읽는 방식이다.
+
+0.4.2 전체 검토에서 서비스 회귀 검사 8개와 Swing 검사 15항목을 추가했다. 수정 전 JAR는 새 서비스 검사에서 8개 실패, 수정본은 전체 54개 통과했다. 세부 변경은 `review-2026-11-02.md`에 기록했다.
