@@ -1,7 +1,11 @@
+bin/
+test-bin/
+doc/api/
+resources/api.zip
+userdata/
+*.lock
+*.tmp
 __pycache__/
 *.pyc
-.pytest_cache/
-userdata/
-*.tmp
-build/
-dist/
+.DS_Store
+Thumbs.db

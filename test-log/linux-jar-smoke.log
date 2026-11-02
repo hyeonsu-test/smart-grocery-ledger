@@ -1,0 +1,7 @@
+Linux 6.6.87.2-microsoft-standard-WSL2
+openjdk version "17.0.17" 2025-10-21
+OpenJDK Runtime Environment Temurin-17.0.17+10 (build 17.0.17+10)
+OpenJDK 64-Bit Server VM Temurin-17.0.17+10 (build 17.0.17+10, mixed mode, sharing)
+4e345e6d30576c9f205b2629a46c219c9693c51bd4e762ae166b909a2048b866  SmartGroceryLedger.jar
+PASS executable JAR: 5 services, write/reload, embedded Javadoc
+OS=Linux amd64 Java=17.0.17

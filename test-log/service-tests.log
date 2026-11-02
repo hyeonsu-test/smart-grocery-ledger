@@ -1,0 +1,49 @@
+Smart Grocery Ledger Java regression tests | 2026-11-02T16:37:02.035293+09:00
+OS=Windows 11 amd64 Java=21.0.9 | business clock=2026-11-02T12:00+09:00
+PASS JSON unicode escape and decimal round trip
+PASS JSON malformed duplicate keys trailing tokens rejected
+PASS UC01 actual payment commits and survives reload
+PASS UC01 moved date recomputes both months
+PASS UC01 cancelled and missing deletion never writes
+PASS UC01 confirmed deletion persists
+PASS UC01 invalid money and overflow rejected
+PASS UC01 invalid date and malformed month rejected
+PASS UC01 actual purchase forces food expense
+PASS Repository atomic failure preserves disk memory and draft
+PASS Repository corrupt file is read-only and never overwritten
+PASS Repository nested corruption and version fail closed
+PASS Repository returned snapshots cannot mutate stored memory
+PASS UC01 search filters keep whole-month summary
+PASS UC02 draft does not save or create expense
+PASS UC02 unknown price is not zero
+PASS UC02 unset zero and exceeded budgets differ
+PASS UC02 quantity validation and duplicate item rejected
+PASS UC02 draft preserved on failed save
+PASS UC04 all five unit conversions
+PASS Price freshness boundary and absent timestamp
+PASS Price future time and event bounds
+PASS UC04 failed and expired sources excluded
+PASS UC04 channel and membership are never mixed
+PASS UC04 numeric-equivalent sizes and bundle counts compare
+PASS UC04 empty and reversed history
+PASS UC04 one latest observation per day
+PASS UC04 timestamps compare as instants across offsets
+PASS UC05 preceding 28 days excludes today
+PASS UC05 minimum four distinct observed days
+PASS UC05 daily means use equal day weights
+PASS UC05 personal target works without historical basis
+PASS UC05 once per local day survives restart
+PASS UC05 no notification when guard save fails
+PASS UC05 view empty favorites and disabled do not notify
+PASS UC05 clear target retains settings and nonfavorite rejected
+PASS UC03 future timestamp and unsafe URL rejected
+PASS UC03 date-only observation retained but not made fresh
+PASS UC03 immutable product specification
+PASS UC03 favorite enable and disable persists
+PASS UC03 partial refresh preserves prior success time
+PASS UC03 invalid second feed record rolls back entire store
+PASS UC03 automatic attempt guard survives restart
+PASS UC03 price event only after commit
+PASS UC03 stale feed never receives fabricated freshness
+PASS Local paths with Korean and spaces persist correctly
+RESULT passed=46 failed=0 total=46

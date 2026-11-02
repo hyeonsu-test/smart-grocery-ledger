@@ -1,0 +1,55 @@
+@startuml
+!pragma layout smetana
+skinparam dpi 180
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam defaultFontName Arial
+skinparam defaultFontSize 15
+skinparam classBackgroundColor #FFFFFF
+skinparam classBorderColor #405862
+skinparam classHeaderBackgroundColor #EAF0F2
+skinparam ArrowColor #405862
+skinparam nodesep 35
+skinparam ranksep 45
+left to right direction
+abstract class Service {
+  ~ repo : Repository
+  ~ clock : Clock
+  ~ now() : OffsetDateTime
+  ~ call(request : Map, body : Supplier) : Map
+}
+class LedgerService {
+  + manageLedger(request : Map) : Map
+}
+class BudgetService {
+  + manageBudgetPlan(request : Map) : Map
+}
+class PriceService {
+  + analyzePrices(request : Map) : Map
+  {static} + normalizeUnitPrice(offer : Map, product : Map) : BigDecimal
+}
+class ProductService {
+  - adapter : MartAdapter
+  - targets : TargetService
+  + manageProducts(request : Map) : Map
+}
+class TargetService {
+  + managePurchaseTargets(request : Map) : Map
+  + basis(productId : String, channel : String, condition : String) : Map
+}
+class MartAdapter {
+  + fetchOffers(store : String, path : Path) : Map
+}
+Service <|-- LedgerService
+Service <|-- BudgetService
+Service <|-- PriceService
+Service <|-- ProductService
+Service <|-- TargetService
+ProductService "1" --> "1" MartAdapter : adapter
+ProductService "1" --> "0..1" TargetService : targets
+legend bottom
+  Map = Map<String, Object>; Supplier = Supplier<Map<String, Object>>
+  + public    - private    ~ package access
+  Constructors and private helper methods omitted.
+endlegend
+@enduml

@@ -1,4 +1,4 @@
 @echo off
 cd /d "%~dp0"
-py -3 main.py
+java -jar "SmartGroceryLedger.jar" %*
 if errorlevel 1 pause

@@ -1,66 +1,93 @@
 # Smart Grocery Ledger
 
-학생·자취생을 위한 개인용 데스크톱 가계부 베타 **0.4.0**입니다. 실제 지출과 장보기 계획을 분리하고, 같은 조건의 식료품 가격을 기준 단위로 비교합니다.
+Java 17 이상과 Swing으로 실행하는 개인 식비 가계부입니다. 수입·지출, 월 식비 예산과 장보기 계획, 상품 가격, 단위 가격 비교·이력, 구매 목표 알림을 제공합니다. 현재 버전은 **0.4.1-java-beta**입니다. Python 없이 실행할 수 있습니다.
 
 ## 실행
 
-Windows에서 **Python 3.10 이상(Tkinter 포함)**을 설치한 뒤 `run.bat`을 실행합니다. 추가 Python 패키지는 필요 없습니다.
-
-```console
-python main.py
-python main.py --demo
-```
-
-`demo.bat`은 가상 가격과 내역으로 시연합니다. 모든 시연 가격은 **실제 판매가가 아닙니다**. 시연용 `userdata/demo.json`과 실사용 `userdata/ledger.json`을 분리합니다. 화면 상단에서 모드를 전환할 수 있습니다. 첫 실행의 실사용 파일은 비어 있습니다.
-
-## 기능
-
-| 화면 | 구현 내용 |
-| --- | --- |
-| 가계부 | 수입·지출 등록, 수정, 삭제, 월·분류·검색어 조회, 월 합계 |
-| 예산·장보기 | 월 식료품 예산, 계획 초안·확정 저장, 예상액·초과액·미확정 가격 |
-| 상품·가격 | 5개 식품 분류, 3개 마트 구분, 직접 입력, JSON 피드 갱신, 즐겨찾기·출처 |
-| 비교·이력 | 조건별 단위 가격 순위, 제외 사유, 날짜별 가격 기록·통계 |
-| 목표·알림 | 직전 28일 기준, 개인 목표 우선, 앱 안 알림, 상품당 하루 1회 |
-
-우유 100ml, 계란 1개, 라면 1봉, 쌀·두부 100g을 기준으로 비교합니다. 확인 후 24시간 이상인 가격, 행사 기간 밖 가격, 확인 시각이 없는 가격, 갱신 실패 가격은 현재 예산·비교·알림 계산에서 제외합니다. 과거 통계에는 당시 정상 관측을 사용합니다.
-
-## 가격 입력과 베타 범위
-
-베타에는 **마트 사이트 자동 수집기가 포함되지 않습니다**. 상품 화면에서 확인한 가격을 직접 입력하거나, 확인 날짜·시각·출처를 포함한 JSON 파일을 등록합니다. 갱신 버튼은 등록된 파일을 다시 읽습니다. 자동 갱신은 앱 실행 중 날짜별 한 번만 시도합니다. 확인 시각을 현재 시각으로 바꾸어 신선한 가격인 것처럼 처리하지 않습니다.
-
-`docs/feed-example.json`은 파일 형식을 설명하는 가상 예시입니다. 파일의 날짜가 오래되면 현재 계산에서 제외되는 것이 정상입니다. 상품 `id`가 같은 경우 브랜드·규격·용량은 바꿀 수 없습니다. 다른 규격은 새 `id`로 등록하세요.
-
-목표 알림은 앱 실행 중에만 나타납니다. 이메일·OS 알림·종료 중 백그라운드 알림은 없습니다. 목표 화면은 온라인·일반 조건을 사용하며 서비스 API는 경로·조건을 지정할 수 있습니다. 달력 위젯·입력 필드별 오류 표시는 후속 UI 개선 항목이고, 베타는 날짜 문자열 입력과 오류 대화상자를 사용합니다.
-
-## 저장과 복구
-
-데이터는 프로젝트 아래 `userdata` 폴더에 JSON으로 저장합니다. 앱을 종료한 뒤 이 폴더를 복사하면 백업할 수 있습니다. 다른 위치는 `python main.py --data-dir 경로`로 지정합니다.
-
-같은 디렉터리에 임시 파일을 완전히 쓴 뒤 원본을 교체합니다. 저장 실패 시 메모리·원본 파일을 유지합니다. 손상된 파일을 읽으면 쓰기를 막고 정상 파일 선택을 안내합니다. 한 데이터 파일은 한 앱 인스턴스에서 사용하세요.
-
-## 문서와 검증
-
-- `docs/api.html`: 함수 5개와 공통 저장 API, 요청·반환·오류·피드 스키마
-- 앱 상단 **API 매뉴얼**: 같은 설명을 앱에서 열람
-- `docs/class-diagram.png`: 실제 구현 클래스와 보유 관계
-- `docs/verification.md`: 테스트 범위와 현재 검증 한계
-
-```console
-python -m unittest discover -s tests -v
-python -m tests.ui_smoke
-```
-
-현재 서비스 테스트 31개가 통과합니다. 화면 생성 검사도 별도로 제공합니다. 실제 화면의 시각적 점검과 제출용 실행 화면 캡처는 아직 완료되지 않았습니다.
-
-## 구조
+호환되는 Java 17 이상 런타임이 설치되어 있어야 합니다.
 
 ```text
-main.py              실행 진입점
-grocery/ui.py        Tkinter 화면 / 화면 전환
-grocery/core.py      AppState, Repository, 5개 서비스, MartAdapter
-grocery/demo.py      격리된 가상 데이터
-grocery/manual.py    API 매뉴얼 원문
-tests/               서비스 테스트와 화면 생성 검사
-docs/                API·클래스·피드 설명
+java -jar SmartGroceryLedger.jar
+java -jar SmartGroceryLedger.jar --demo
 ```
+
+Windows에서는 `run.bat` 또는 `demo.bat`, macOS/Linux에서는 `sh run.sh --demo`를 사용할 수 있습니다. 파일 연결이 설정돼 있으면 JAR를 더블 클릭해도 실행됩니다.
+
+기본 저장 위치는 `<사용자 홈>/SmartGroceryLedger/data/`입니다. 일반 모드는 `ledger.json`, 시연 모드는 `demo.json`을 사용합니다. 시연 자료는 가상 가격이며 실제 판매가가 아닙니다. 새 시연 자료가 필요하면 별도 폴더로 실행하세요.
+
+```text
+java -jar SmartGroceryLedger.jar --demo --data-dir "./demo-data"
+java -jar SmartGroceryLedger.jar --data-dir "./my-data"
+java -jar SmartGroceryLedger.jar --smoke-test
+```
+
+`--no-auto`는 앱 실행 중 날짜별 피드 갱신 시도를 끕니다. 동시에 같은 데이터 파일을 사용하는 두 앱은 파일 잠금으로 차단합니다. Windows 외 환경의 GUI 사용에는 한글 글꼴과 그래픽 화면 환경이 필요합니다.
+
+## 구현 범위
+
+| 설계 | Java 구현 | 동작 |
+|---|---|---|
+| UC01 / FN01 | `LedgerService.manageLedger` | 실제 수입·지출 등록·수정·삭제·월/분류/키워드 검색, 월 합계 |
+| UC02 / FN02 | `BudgetService.manageBudgetPlan` | 예산 저장, 장보기 초안·저장, 예상액·가격 미확정·초과액 |
+| UC03 / FN03 | `ProductService.manageProducts` | 상품/마트/경로 필터, 즐겨찾기, 직접 가격 입력, JSON 피드 갱신 |
+| UC04 / FN04 | `PriceService.analyzePrices` | 조건을 맞춘 단위 가격 비교, 날짜별 최종 관측 가격과 통계 |
+| UC05 / FN05 | `TargetService.managePurchaseTargets` | 직전 28일 기준, 개인 목표 우선, 저장 후 상품별 하루 한 번 알림 |
+
+**실제 마트 웹 자동 수집은 미구현입니다.** 가격은 직접 입력하거나 사용자가 준비한 JSON 스냅샷을 읽습니다. 앱의 피드 갱신은 원래 확인 날짜·시각을 유지하며 오래된 자료를 최신 가격으로 바꾸지 않습니다. 배송비는 비교 가격에서 제외합니다. 실제 결제 기록에는 배송비를 포함한 결제 총액을 직접 확인해 입력하세요.
+
+현재 가격은 확인 후 24시간 미만이며 행사 기간 안에 있는 자료만 사용합니다. 확인 시각 없음·갱신 실패·미래 시각·만료 가격은 현재 비교에서 제외합니다. 과거 이력은 관측 당일에 유효했던 자료를 사용합니다. 평균은 관측한 날짜별 평균을 같은 가중치로 계산하며, 4일 미만이면 90% 구매 기준을 계산하지 않습니다. 개인 목표는 이 제한과 관계없이 우선 적용합니다. 앱 종료 중에는 알림이 발생하지 않습니다.
+
+## 빌드와 테스트
+
+빌드에는 JDK 17 이상이 필요합니다. 외부 라이브러리나 Maven/Gradle 설치는 필요하지 않습니다.
+
+```powershell
+# Windows PowerShell (JAVA_HOME을 설치한 JDK로 지정할 수 있습니다)
+.\build.ps1
+java -cp "bin;test-bin" sgl.UiSmokeTests
+```
+
+```sh
+# macOS / Linux
+sh build.sh
+# GUI 화면이 있는 환경에서만 실행
+java -cp bin:test-bin sgl.UiSmokeTests
+```
+
+빌드는 `javac --release 17`로 클래스 파일을 만들고, Javadoc을 생성하여 JAR 안에 포함한 후 서비스 테스트와 JAR 실행 검사를 수행합니다. 컴파일 및 Javadoc 경고는 실패로 처리합니다. Swing의 직렬화 경고만 제외합니다. Swing 액션 검사는 별도로 실행합니다.
+
+테스트는 JUnit 없이 실행되는 assertion 기반 Java 테스트 러너이며, 실패가 있으면 종료 코드 1을 반환합니다. 각 테스트는 독립된 임시 폴더를 사용합니다. `test-log/`에 실제 실행 로그를 보관했습니다. 세부 범위는 [검증 기록](doc/verification.md)을 확인하세요.
+
+## Javadoc과 설계
+
+- `doc/api/index.html`: 실제 Java 문서 주석에서 생성한 API 매뉴얼. 빌드 후 브라우저에서 엽니다.
+- 앱 상단 **Javadoc API 매뉴얼** 버튼: JAR에 포함된 문서를 데이터 폴더의 캐시에 풀고 브라우저로 엽니다.
+- [서비스 클래스 다이어그램](doc/class-services.png), [화면·저장 클래스 다이어그램](doc/class-storage-ui.png).
+- `.puml`과 `.svg` 원본도 `doc/`에 있습니다. 유스케이스의 dependency/include/extend 제외 결정을 유지합니다.
+- [피드 예시](resources/feed-example.json)는 고정 날짜의 **가상** 자료입니다. 실제 관측 없이 날짜만 최신으로 바꾸지 마세요.
+
+API는 HTTP 서버가 아닌 데스크톱 내부 메서드 API입니다. 요청·결과는 `Map<String,Object>`로 전달하며, 메서드 주석에 action별 입력·결과·오류를 명시했습니다. 가격 계산은 `BigDecimal`, 시각은 명시적 시간대가 있는 ISO 형식을 사용합니다.
+
+## 디렉터리 구조
+
+```text
+SmartGroceryLedger/
+  src/sgl/                 Java 소스
+  bin/sgl/                 컴파일 결과 (빌드 생성, 제출 ZIP 포함)
+  lib/                     외부 라이브러리 없음 안내
+  resources/               피드 예시, 내장 Javadoc 압축본
+  test/sgl/                서비스·Swing 액션·화면 출력 검증 코드
+  test-bin/sgl/            테스트 컴파일 결과 (빌드 생성)
+  test-log/                실제 테스트 및 플랫폼 실행 로그
+  doc/api/                 생성된 Javadoc (빌드 생성, 제출 ZIP 포함)
+  doc/screenshots/         시연 창 원본 캡처와 Swing 고해상도 출력
+  doc/                     클래스 다이어그램, 검증·배포 설명
+  SmartGroceryLedger.jar   실행 파일
+  build.ps1 / build.sh     재현 가능한 빌드·문서·테스트
+  run.bat / demo.bat       Windows 실행
+  run.sh                   macOS/Linux 실행
+```
+
+소스 저장소에는 재생성할 수 있는 `bin`, `test-bin`, `doc/api`, `resources/api.zip`을 제외합니다. 제출용 `src.zip`에는 이 결과물도 포함해 폴더 트리를 유지합니다. 개인 가계부, 인증 정보, 학번이 포함된 과제 보고서는 공개 저장소에 넣지 않습니다.
+
+이전 Python 베타는 Git 이력과 별도 보관본에 남기고, 현재 기본 실행 경로는 Java로 전환했습니다. 실행 명령과 소스·Javadoc·클래스 도면을 같은 Java 구현에 맞췄습니다.

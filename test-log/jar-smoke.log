@@ -1,0 +1,2 @@
+PASS executable JAR: 5 services, write/reload, embedded Javadoc
+OS=Windows 11 amd64 Java=21.0.9

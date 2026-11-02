@@ -1,0 +1,12 @@
+PASS five Swing use-case screens
+PASS history renders nine observed dates
+PASS ledger save button persists actual payment
+PASS saved Swing entry survives repository restart
+PASS plan edit remains an unsaved draft
+PASS plan save button commits draft
+PASS plan save never creates an expense
+PASS favorites populate purchase target screen
+PASS target save button persists chosen unit price
+PASS test does not claim a visible screenshot
+RESULT Swing action checks passed=10 failed=0
+OS=Windows 11 Java=21.0.9

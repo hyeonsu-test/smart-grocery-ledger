@@ -1,0 +1,21 @@
+{
+  "version": "0.4.1-java-beta",
+  "built_for_java": 17,
+  "build_jdk": "Temurin 21.0.9",
+  "jar_sha256": "4e345e6d30576c9f205b2629a46c219c9693c51bd4e762ae166b909a2048b866",
+  "recorded_at": "2026-11-02T16:46:36+09:00",
+  "service_tests": 46,
+  "swing_checks": 10,
+  "verified_platforms": [
+    "Windows 11 / Java 21.0.9 / GUI and services",
+    "Windows 11 / Java 26 / executable JAR headless smoke",
+    "Ubuntu 26.04 WSL2 / Java 17.0.17 / services and executable JAR headless smoke"
+  ],
+  "unverified": [
+    "macOS",
+    "Linux GUI"
+  ],
+  "native_screenshots": 5,
+  "swing_component_renders": 5,
+  "javadoc_renders": 2
+}
