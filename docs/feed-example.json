@@ -1,0 +1,32 @@
+{
+  "products": [
+    {
+      "id": "milk",
+      "category": "우유",
+      "name": "데일리 우유 1L",
+      "brand": "시연식품",
+      "spec": "기본형",
+      "size": "1000",
+      "unit": "ml",
+      "pack_count": 1
+    }
+  ],
+  "offers": [
+    {
+      "id": "milk-0-0",
+      "product_id": "milk",
+      "store": "이마트",
+      "branch": "시연 지점",
+      "channel": "온라인",
+      "price": "2600",
+      "condition": "일반",
+      "url": "https://example.com/",
+      "checked_date": "2026-11-02",
+      "checked_at": "2026-11-02T11:50:00+09:00",
+      "start": "",
+      "end": "",
+      "method": "시연 데이터",
+      "failed": false
+    }
+  ]
+}
