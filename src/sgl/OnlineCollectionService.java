@@ -7,10 +7,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 /** Fetches outside the repository lock, then merges results with the latest saved ledger. */
-public final class OnlineCollectionService extends Service {
+public final class OnlineCollectionService extends Service implements AutoCloseable {
   private final ProductCollector collector;
   private final TargetService targets;
   private final AtomicBoolean running = new AtomicBoolean();
+  private boolean closed;
+
+  /**
+   * Prevents future collection commits and alert evaluation after the owning window closes.
+   * An in-flight network read may finish, but its result is discarded. A commit already holding
+   * the repository lock finishes before this method returns.
+   */
+  @Override
+  public void close() {
+    synchronized (repo) { closed = true; }
+  }
 
   /**
    * Creates the collection coordinator.
@@ -40,6 +51,7 @@ public final class OnlineCollectionService extends Service {
       String today = LocalDate.now(clock).toString();
       List<CollectionSource> requested;
       synchronized (repo) {
+        if (closed) return m("status", "CANCELLED");
         if (!repo.readError().isEmpty()) return m("status", "READ_FAILED", "message", repo.readError());
         if (repo.snapshot().demo()) return ok("skipped", true, "message", "시연 모드에서는 실제 가격을 섞지 않습니다.");
         if (automatic && repo.snapshot().value("online_attempt").equals(today))
@@ -49,8 +61,9 @@ public final class OnlineCollectionService extends Service {
       if(requested.stream().noneMatch(CollectionSource::enabled))
         return ok("skipped",true,"message","자동 수집할 상품이 없습니다. 수집 목록에서 상품을 추가하거나 켜세요.");
       List<ProductCollector.Result> results = collector.collect(requested.stream().filter(CollectionSource::enabled).toList(),progress);
-      if (results.isEmpty()) return m("status", "REFRESH_FAILED", "message", "수집 대상이 없습니다.");
       synchronized (repo) {
+        if (closed) return m("status", "CANCELLED");
+        if (results.isEmpty()) return m("status", "REFRESH_FAILED", "message", "수집 대상이 없습니다.");
         AppState candidate = repo.snapshot();
         int count = 0;
         Set<String> updated = new LinkedHashSet<>();
@@ -96,6 +109,7 @@ public final class OnlineCollectionService extends Service {
             "sources", details, "target_result", targetResult);
       }
     } catch (RuntimeException e) {
+      synchronized (repo) { if (closed) return m("status", "CANCELLED"); }
       return m("status", "REFRESH_FAILED", "message",
           e.getMessage() == null ? "수집 처리 실패" : e.getMessage());
     } finally {

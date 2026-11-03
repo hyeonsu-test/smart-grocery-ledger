@@ -256,7 +256,7 @@ final class BudgetTab extends TabView {
           s(item, "branch").isEmpty() ? "전체 지점" : s(item, "branch"),
           def(item, "channel", "온라인"),
           def(item, "condition", "일반"),
-          money(item.get("estimate")));
+          s(item, "estimateReason").isEmpty() ? money(item.get("estimate")) : s(item, "estimateReason"));
     restoreSelection(planTable, rows(planDraft), "itemId", planItemId);
     updating = false;
     var a = obj(r.get("summary"));

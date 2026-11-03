@@ -29,6 +29,15 @@ final class ProductTab extends TabView {
       table("관심", "상품", "마트 / 지점", "경로 / 조건", "가격 (원)", "단위 가격", "확인 시각", "상태");
   private List<OfferRow> productRows = new ArrayList<>();
   private boolean busy = false;
+  private boolean closed;
+  private SwingWorker<?, ?> worker;
+
+  void close() {
+    closed = true;
+    online.close();
+    if (worker != null) worker.cancel(true);
+    busy = false;
+  }
   private final JComboBox<String> filterCategory = all(CATEGORIES);
   private final JComboBox<String> filterStore = all(STORES);
   private final JComboBox<String> filterChannel = combo("전체", "온라인", "오프라인");
@@ -268,7 +277,7 @@ final class ProductTab extends TabView {
   }
 
   void collectOnline(boolean auto) {
-    if (busy) return;
+    if (closed || busy) return;
     if (frame.repo.snapshot().demo()) {
       frame.status.setText("시연 모드는 가상 가격입니다. 실제 수집은 일반 모드에서 사용하세요.");
       return;
@@ -276,7 +285,7 @@ final class ProductTab extends TabView {
     busy = true;
     frame.collecting(true);
     frame.status.setText("공식 마트 상품 정보를 수집하는 중…");
-    new SwingWorker<Map<String, Object>, String>() {
+    worker = new SwingWorker<Map<String, Object>, String>() {
       @Override
       protected Map<String, Object> doInBackground() {
         return online.collect(auto, message -> publish(message));
@@ -284,11 +293,12 @@ final class ProductTab extends TabView {
 
       @Override
       protected void process(List<String> messages) {
-        if (!messages.isEmpty()) frame.status.setText("수집 중 · " + messages.get(messages.size() - 1));
+        if (!closed && !messages.isEmpty()) frame.status.setText("수집 중 · " + messages.get(messages.size() - 1));
       }
 
       @Override
       protected void done() {
+        if (closed || isCancelled()) return;
         busy = false;
         frame.collecting(false);
         try {
@@ -326,18 +336,19 @@ final class ProductTab extends TabView {
           frame.status.setText(collectionSummary);
         }
       }
-    }.execute();
+    };
+    worker.execute();
   }
 
   void refreshFeed(boolean auto) {
-    if (busy) return;
+    if (closed || busy) return;
     if (frame.repo.snapshot().map("feed_paths").isEmpty()) {
       frame.status.setText("연결된 JSON 피드가 없습니다. 가격 직접 입력 또는 피드 연결을 사용하세요.");
       return;
     }
     busy = true;
     frame.status.setText("가격 정보를 읽는 중...");
-    new SwingWorker<Map<String, Object>, Void>() {
+    worker = new SwingWorker<Map<String, Object>, Void>() {
       @Override
       protected Map<String, Object> doInBackground() {
         return products.manageProducts(m("action", auto ? "AUTO_REFRESH" : "REFRESH"));
@@ -345,6 +356,7 @@ final class ProductTab extends TabView {
 
       @Override
       protected void done() {
+        if (closed || isCancelled()) return;
         busy = false;
         try {
           var r = get();
@@ -360,7 +372,8 @@ final class ProductTab extends TabView {
           frame.error("갱신 실패: " + e.getMessage());
         }
       }
-    }.execute();
+    };
+    worker.execute();
   }
 
   private void openSource(OfferRow row) {

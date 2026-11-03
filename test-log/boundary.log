@@ -1,0 +1,41 @@
+PASS 1 minimum is package count
+PASS 2 ordinary offer defaults to one
+PASS 3 membership minimum recognized
+PASS 4 minimum does not multiply package contents or unit price
+PASS 5 below minimum leaves plan total unknown
+PASS 6 below minimum cannot assert affordability
+PASS 7 ineligible price excluded from valid subtotal
+PASS 8 minimum requirement explained
+PASS 9 user quantity is never silently increased
+PASS 10 estimating does not save
+PASS 11 exact minimum uses two package prices
+PASS 12 eligible plan computes remaining budget
+PASS 13 eligible quantity clears reason
+PASS 14 above minimum uses actual quantity
+PASS 15 ordinary plan cannot borrow conditional price
+PASS 16 restart preserves insufficient quantity and unknown estimate
+PASS 17 plan save never creates actual expense
+PASS 18 actual receipt remains independent of online minimum and price
+PASS 19 price remains usable just before 24 hours
+PASS 20 price expires at exactly 24 hours
+PASS 21 failed plan save returns edited quantity
+PASS 22 failed save preserves disk and memory
+PASS 23 03 to 02 keeps chosen package quantity
+PASS 24 02 shows unmet minimum in estimate cell
+PASS 25 02 recalculates after quantity correction
+PASS 26 delayed collection started
+PASS 27 close discards response even if collector ignores cancellation
+PASS 28 cancelled collection leaves ledger bytes unchanged
+PASS 29 cancelled collection does not consume daily attempt
+PASS 30 cancelled collection does not consume daily target notification
+PASS 31 closed coordinator cannot restart
+PASS 32 next application session retries cancelled day
+PASS 33 next session can still notify a matching target
+PASS 34 Swing collector starts in background
+PASS 35 window disposes without waiting for network response
+PASS 36 interrupted collector actually finishes
+PASS 37 closed Swing window does not create ledger from late result
+PASS 38 late progress and completion do not update disposed UI
+PASS 39 late completion opens no window or notification
+PASS 40 queued startup auto collection is cancelled when window closes immediately
+Boundary tests: 40 passed, 0 failed

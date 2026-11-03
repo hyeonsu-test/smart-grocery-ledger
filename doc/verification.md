@@ -13,6 +13,7 @@ java -cp "bin;test-bin" sgl.CollectionUiTests
 java -cp "bin;test-bin" sgl.DiscoveryUiTests
 java -cp "bin;test-bin" sgl.ProductFlowTests
 java -cp "bin;test-bin" sgl.RecheckTests
+java -cp "bin;test-bin" sgl.BoundaryTests
 ~~~
 
 Linux 또는 macOS:
@@ -24,6 +25,7 @@ java -cp "bin:test-bin" sgl.CollectionUiTests
 java -cp "bin:test-bin" sgl.DiscoveryUiTests
 java -cp "bin:test-bin" sgl.ProductFlowTests
 java -cp "bin:test-bin" sgl.RecheckTests
+java -cp "bin:test-bin" sgl.BoundaryTests
 ~~~
 
 Swing 검사는 그래픽 화면이 필요합니다. JAR만 받은 경우 화면 없이 저장·재읽기·내장 Javadoc을 확인할 수 있습니다.
@@ -32,25 +34,35 @@ Swing 검사는 그래픽 화면이 필요합니다. JAR만 받은 경우 화면
 java -jar SmartGroceryLedger.jar --smoke-test
 ~~~
 
-## 0.7.2 검증 결과
+## 0.7.3 검증 결과
 
 | 환경 | 확인한 범위 |
 |---|---|
-| Windows 11 / Temurin Java 21.0.9 | 서비스 61, 수집 32, 검색·목록 44, 기존 Swing 58, 수집 UI 18, 검색·목록 UI 17, 상품 연동 55, 재검토 61(합계 346) 모두 통과 |
+| Windows 11 / Temurin Java 21.0.9 | 서비스 61, 수집 32, 검색·목록 44, 기존 Swing 58, 수집 UI 18, 검색·목록 UI 17, 상품 연동 55, 재검토 61, 추가 경계 40(합계 386) 모두 통과 |
 | Ubuntu 26.04 / WSL2 / Java 17.0.17 | 동일 항목 통과, WSLg 화면 검사와 같은 배포 JAR 실행 |
 | Windows 11 / Oracle Java 26 | 같은 배포 JAR의 서비스·저장·재읽기·내장 Javadoc 검사 통과 |
 
-macOS 실행은 미검증입니다. JAR SHA-256은 `d1db1eb85d39f939774205cc9be2c70b2b60a5512d2cbbdf4aeee2d7ecc2a940`입니다. [배포 정보](../release-manifest.json)
+macOS 실행은 미검증입니다. JAR SHA-256은 `5402377ca1cb44cc27bd16805fae58e37a73075049655598d8bd7c3f13eb835f`입니다. [배포 정보](../release-manifest.json)
 
 [Windows 서비스](../test-log/service-tests.log) · [수집](../test-log/collection-tests.log) · [검색·목록](../test-log/discovery-tests.log) · [기존 UI](../test-log/swing-actions.log) · [수집 UI](../test-log/collection-swing.log) · [검색·목록 UI](../test-log/discovery-swing.log)
 
 [Linux 서비스](../test-log/linux-service-tests.log) · [수집](../test-log/linux-collection-tests.log) · [검색·목록](../test-log/linux-discovery-tests.log) · [기존 UI](../test-log/linux-swing-actions.log) · [수집 UI](../test-log/linux-collection-swing.log) · [검색·목록 UI](../test-log/linux-discovery-swing.log) · [JAR](../test-log/linux-jar-smoke.log)
 
+## 최소 주문과 수집 중 종료
+
+BoundaryTests 40항목은 최소 주문 미달·충족·초과 수량, 가격 조건 분리, 실제 영수증 독립, 계획 저장·재실행, 24시간 유효 경계와 저장 실패를 검사합니다. 실제 Swing에서 03의 상품을 02로 전달하고 수량을 고친 뒤 예상액을 확인합니다.
+
+수집기 응답을 지연시킨 뒤 창을 닫아 늦은 응답·진행 메시지·완료 콜백이 파일이나 닫힌 화면을 변경하지 않는지 검사합니다. 취소를 무시하는 수집기에서도 저장을 막으며 일일 수집·알림 기록을 소모하지 않습니다. 새 실행에서는 다시 수집하고 목표 알림을 보낼 수 있습니다. 종료 시 이미 저장 중인 작업은 마무리한 뒤 창이 닫힙니다.
+
+Windows와 Linux에서 기존 346항목과 추가 40항목, 합계 386항목을 통과했습니다. 실제 6개 상품의 등록·04/05·재수집·재실행도 두 환경에서 각각 76항목을 다시 통과했습니다.
+
+[검사 코드](../test/sgl/BoundaryTests.java) · [Windows](../test-log/boundary.log) · [Linux](../test-log/linux-boundary.log)
+
 ## 묶음 수량과 목표 편집 재검토
 
 RecheckTests 61항목은 계란·라면·컵의 다중 묶음, 앞뒤 배수, 1,500ml 같은 수량, 전각 문자, 최소 주문과 판매 묶음 구분을 검사합니다. 해석할 수 없는 구성은 수량 확인을 요구합니다. 실제 Swing에서 묶음 상품의 04 단가와 05 목표, 표 정렬·갱신 후 미저장 입력 보존, 저장 대상과 재실행을 확인합니다. 최신 관측이 오프라인인 경우 초기 조건을 상속하고 기존에 저장한 목표 조건은 유지합니다. 이전의 잘못된 규격은 재수집에서 제외하고 과거 이력을 보존합니다.
 
-Windows·Linux 각각 기존 285항목과 재검토 61항목, 합계 346항목이 통과했습니다. 실제 6개 상품의 04·05 연동 검증도 양 플랫폼 76항목씩 다시 통과했습니다. 최초 재검증에서는 프링글스 양파맛 110G의 품절 응답을 거부했습니다. 이 로그를 보존하고 현재 판매 중인 롯데 빼빼로 아몬드 132G를 테스트 목록에 새로 선택했습니다.
+0.7.2에서 Windows·Linux 각각 기존 285항목과 재검토 61항목, 합계 346항목이 통과했습니다. 실제 6개 상품의 04·05 연동 검증도 양 플랫폼 76항목씩 다시 통과했습니다. 최초 재검증에서는 프링글스 양파맛 110G의 품절 응답을 거부했습니다. 이 로그를 보존하고 현재 판매 중인 롯데 빼빼로 아몬드 132G를 테스트 목록에 새로 선택했습니다.
 
 [재검토 코드](../test/sgl/RecheckTests.java) · [Windows](../test-log/recheck.log) · [Linux](../test-log/linux-recheck.log) · [실제 품절 응답](../test-log/live-stock-change.log)
 
@@ -93,7 +105,7 @@ ProductFlowTests는 실제 Swing 창에서 기존 상품이 있는 상태로 새
 
 Javadoc은 빌드 후 `doc/api/index.html` 또는 앱의 **Javadoc API 매뉴얼** 버튼으로 여세요. javac는 `--release 17 -Xlint:all,-serial -Werror`, javadoc은 `-Xdoclint:all -Werror`로 검사합니다.
 
-rendered의 01·02는 가상 시연 자료, 03·04·05·08·09는 실제 수집·검색으로 실행한 Swing 컴포넌트 출력입니다. 03·04·05는 0.7.2의 신규 6개 연동 검증 화면입니다. 05의 목표가는 테스트용 사용자 설정 예시입니다. 나머지 화면은 해당 기능이 같은 이전 버전 자료를 유지합니다. native 폴더와 탭 배율 비교는 이전 버전의 보관 자료입니다. 새 보고서에는 실제 검색 화면과 목록을 포함합니다.
+rendered의 01·02는 가상 시연 자료, 03·04·05·08·09는 실제 수집·검색으로 실행한 Swing 컴포넌트 출력입니다. 03·04·05는 0.7.3의 신규 6개 연동 검증 화면입니다. 05의 목표가는 테스트용 사용자 설정 예시입니다. 나머지 화면은 해당 기능이 같은 이전 버전 자료를 유지합니다. native 폴더와 탭 배율 비교는 이전 버전의 보관 자료입니다. 새 보고서에는 실제 검색 화면과 목록을 포함합니다.
 
 [상품 검색](screenshots/rendered/08-discovery.png) · [수집 목록](screenshots/rendered/09-collection-list.png) · [API 개요](screenshots/api/06-javadoc-overview.png)
 

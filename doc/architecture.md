@@ -56,3 +56,9 @@ TargetTab은 관심 상품 추가 후 editingTargetId와 선택 행을 해당 �
 ## 수량과 미저장 목표의 보존
 
 ProductDiscovery.packageTotal은 명시적인 앞뒤 묶음 배수를 적용하고 모호한 수량은 확인 대상으로 남깁니다. TargetTab은 정렬로 선택 행 위치만 바뀔 때 편집 중인 값을 다시 불러오지 않습니다. PriceTab과 TargetService의 초기 판매 조건은 가장 최근 관측을 기준으로 하며 저장한 목표 조건이 우선합니다.
+
+## 최소 주문과 창의 수명
+
+PriceObservation.minimumQuantity는 수집된 가격 조건의 최소 판매 묶음 수를 반환합니다. BudgetService는 계획 수량이 이 값보다 작으면 해당 가격을 예상액에서 제외하고 estimateReason을 반환합니다. BudgetTab은 이유를 예상액 칸에 표시합니다. 상품 규격·단가와 실제 결제 기록은 독립적으로 유지합니다.
+
+LedgerFrame.dispose는 ProductTab.close를 호출합니다. ProductTab은 닫힘 상태를 설정하고 OnlineCollectionService.close로 이후 저장을 차단한 뒤 SwingWorker를 취소합니다. 서비스의 닫힘 확인과 저장은 같은 Repository 잠금 안에서 처리하므로 이미 시작한 저장만 종료 전에 완료됩니다. 네트워크를 기다리느라 저장 잠금을 잡지 않으며 늦은 응답은 반영하지 않습니다. 닫힌 탭의 진행·완료 콜백은 화면이나 알림 창을 갱신하지 않습니다.

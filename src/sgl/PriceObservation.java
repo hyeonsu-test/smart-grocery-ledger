@@ -136,6 +136,16 @@ public record PriceObservation(
         || !condition.matches("(?:일반|코스트코 회원)(?: · 최소 [0-9]+개 구매)?");
   }
 
+  /**
+   * Returns the minimum number of sale packages required by the observed price condition.
+   * @return minimum package count, or one when no minimum is recorded
+   */
+  public long minimumQuantity() {
+    var match = java.util.regex.Pattern.compile("(?:^| · )최소 ([0-9]+)개 구매(?:$| · )")
+        .matcher(condition);
+    return match.find() ? integer(match.group(1), false) : 1;
+  }
+
   boolean inPeriod(LocalDate date) {
     return (start == null || !date.isBefore(start)) && (end == null || !date.isAfter(end));
   }

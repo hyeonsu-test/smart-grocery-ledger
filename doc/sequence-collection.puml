@@ -20,6 +20,9 @@ Site --> Collector : page / error
 Collector -> Collector : validate
 end
 Collector --> Service : 5. results
+alt Owner closed
+Service --> UI : CANCELLED (no save / alert)
+else Owner open
 Service -> Repo : 6. recheck settings / merge
 Service -> Repo : 7. saveAtomic()
 Repo --> Service : OK / SAVE_FAILED
@@ -27,5 +30,6 @@ alt Saved
 Service -> Target : 8. EVALUATE
 end
 Service --> UI : 9. results
+end
 @enduml
 

@@ -35,6 +35,7 @@ class PriceObservation <<record>> {
   + price() : BigDecimal
   + checkedAt() : OffsetDateTime
   + validity(now : OffsetDateTime) : String
+  + minimumQuantity() : long
   ~ sameReading(other : PriceObservation) : boolean
 }
 Repository "1" *-- "1" AppState : committed state

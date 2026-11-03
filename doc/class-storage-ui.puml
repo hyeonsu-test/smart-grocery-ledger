@@ -15,6 +15,7 @@ class LedgerFrame {
   ~ loadedMonth : String
   ~ navigate(index : int)
   ~ refreshAfterPriceChange()
+  + dispose()
 }
 abstract class TabView {
   ~ frame : LedgerFrame
@@ -33,7 +34,10 @@ class BudgetTab {
 class ProductTab {
   - products : ProductService
   - online : OnlineCollectionService
+  - worker : SwingWorker
+  - closed : boolean
   ~ collectOnline(auto : boolean)
+  ~ close()
 }
 class PriceTab {
   - prices : PriceService

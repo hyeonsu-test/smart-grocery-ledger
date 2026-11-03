@@ -28,7 +28,8 @@ public final class BudgetService extends Service {
    *
    * @param request action, month and action-specific fields
    * @return status, draftPlan, items, validSubtotal, unknownCount, totalEstimate, projectedBalance
-   *     and excess. Unknown prices make totalEstimate/excess null.
+   *     and excess. Unknown prices or unmet minimum quantities make totalEstimate/excess null.
+   *     Each item includes an estimateReason when its quantity does not meet the price condition.
    */
   public Map<String, Object> manageBudgetPlan(Map<String, Object> request) {
     return call(
@@ -91,6 +92,8 @@ public final class BudgetService extends Service {
           List<Object> items = new ArrayList<>();
           for (var item : rows(draft)) {
             BigDecimal best = null;
+            String estimateReason = "";
+            long quantity = integer(item.get("quantity"), false);
             for (var o : st.latest())
               if (o.productId().equals(s(item, "product_id"))
                   && o.validity(now()).equals("현재 유효")
@@ -98,6 +101,10 @@ public final class BudgetService extends Service {
                   && o.channel().equals(def(item, "channel", "온라인"))
                   && o.condition().equals(def(item, "condition", "일반"))
                   && (s(item, "branch").isEmpty() || o.branch().equals(s(item, "branch")))) {
+                if (quantity < o.minimumQuantity()) {
+                  estimateReason = "최소 " + o.minimumQuantity() + "개 필요";
+                  continue;
+                }
                 BigDecimal price = o.price();
                 best = best == null ? price : best.min(price);
               }
@@ -112,7 +119,9 @@ public final class BudgetService extends Service {
                     "price",
                     best,
                     "estimate",
-                    cost));
+                    cost,
+                    "estimateReason",
+                    best == null ? estimateReason : ""));
             items.add(row);
           }
           var summary = monthly(st, mon);

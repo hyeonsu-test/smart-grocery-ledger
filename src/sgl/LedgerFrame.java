@@ -250,6 +250,7 @@ public final class LedgerFrame extends JFrame {
   @Override
   public void dispose() {
     timer.stop();
+    productTab.close();
     super.dispose();
   }
 }

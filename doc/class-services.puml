@@ -43,8 +43,12 @@ class MartAdapter {
 class OnlineCollectionService {
   - collector : ProductCollector
   - targets : TargetService
+  - closed : boolean
   + collect() : Map
+  + close()
 }
+interface AutoCloseable
+AutoCloseable <|.. OnlineCollectionService
 interface ProductCollector {
   + collect(selected, progress) : List<Result>
 }
