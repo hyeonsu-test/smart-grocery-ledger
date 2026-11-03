@@ -1,4 +1,5 @@
 PASS five Swing use-case screens
+PASS each screen is owned by its own tab
 PASS history renders nine observed dates
 PASS ledger save button persists actual payment
 PASS saved Swing entry survives repository restart
@@ -20,8 +21,10 @@ PASS comparison identifies product and price unit
 PASS notification contains product store unit price and source URL
 PASS product-to-plan button only creates a draft
 PASS product-to-plan navigation never creates a payment
+PASS selected product opens an unsaved ledger entry
+PASS saving a cross-tab purchase records exactly one expense
 PASS asynchronous connected feed refresh completes
 PASS new feed product immediately appears in plan and comparison selectors
 PASS new feed price is compared without restarting app
-RESULT Swing action checks passed=25 failed=0
+RESULT Swing action checks passed=28 failed=0
 OS=Windows 11 Java=21.0.9

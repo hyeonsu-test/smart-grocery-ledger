@@ -91,14 +91,14 @@ public final class BudgetService extends Service {
           List<Object> items = new ArrayList<>();
           for (var item : rows(draft)) {
             BigDecimal best = null;
-            for (var o : latest(st))
-              if (s(o, "product_id").equals(s(item, "product_id"))
-                  && validity(o, now()).equals("현재 유효")
-                  && (s(item, "store").isEmpty() || s(o, "store").equals(s(item, "store")))
-                  && s(o, "channel").equals(def(item, "channel", "온라인"))
-                  && def(o, "condition", "일반").equals(def(item, "condition", "일반"))
-                  && (s(item, "branch").isEmpty() || s(o, "branch").equals(s(item, "branch")))) {
-                BigDecimal price = num(o.get("price"), false);
+            for (var o : st.latest())
+              if (o.productId().equals(s(item, "product_id"))
+                  && o.validity(now()).equals("현재 유효")
+                  && (s(item, "store").isEmpty() || o.store().equals(s(item, "store")))
+                  && o.channel().equals(def(item, "channel", "온라인"))
+                  && o.condition().equals(def(item, "condition", "일반"))
+                  && (s(item, "branch").isEmpty() || o.branch().equals(s(item, "branch")))) {
+                BigDecimal price = o.price();
                 best = best == null ? price : best.min(price);
               }
             BigDecimal cost = best == null ? null : best.multiply(num(item.get("quantity"), false));
@@ -108,7 +108,7 @@ public final class BudgetService extends Service {
             row.putAll(
                 m(
                     "name",
-                    s(st.product(s(item, "product_id")), "name"),
+                    st.product(s(item, "product_id")).name(),
                     "price",
                     best,
                     "estimate",

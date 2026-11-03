@@ -27,67 +27,23 @@ public final class ProductService extends Service {
     this.targets = targets;
   }
 
-  private String importOffer(
-      AppState st, Map<String, Object> product, Map<String, Object> offer, String method) {
-    var p = copyMap(product);
-    p.putIfAbsent("id", id());
-    p.put("size", num(p.get("size"), false).stripTrailingZeros().toPlainString());
-    p.put("pack_count", integer(p.get("pack_count"), false));
-    product(p);
-    String pid = s(p, "id");
-    if (st.map("products").containsKey(pid)) {
-      var old = st.product(pid);
-      for (String k : List.of("name", "brand", "category", "spec", "unit"))
-        if (!s(p, k).equals(s(old, k)))
-          throw new IllegalArgumentException("기존 상품 정보는 새 ID로 등록하세요.");
-      if (num(p.get("size"), false).compareTo(num(old.get("size"), false)) != 0
-          || integer(p.get("pack_count"), false) != integer(old.get("pack_count"), false))
-        throw new IllegalArgumentException("기존 규격은 새 ID로 등록하세요.");
-    }
-    var o = copyMap(offer);
-    o.putAll(
-        m(
-            "id",
-            id(),
-            "product_id",
-            pid,
-            "method",
-            method,
-            "failed",
-            false,
-            "price",
-            num(o.get("price"), false).toPlainString()));
-    for (var e :
-        m(
-                "channel",
-                "온라인",
-                "condition",
-                "일반",
-                "branch",
-                "전체",
-                "checked_at",
-                "",
-                "start",
-                "",
-                "end",
-                "")
-            .entrySet()) o.putIfAbsent(e.getKey(), e.getValue());
-    offer(o, p);
-    if (s(o, "checked_at").isEmpty()
-        ? LocalDate.parse(s(o, "checked_date")).isAfter(now().toLocalDate())
-        : OffsetDateTime.parse(s(o, "checked_at")).isAfter(now()))
+  private Product readProduct(Map<String, Object> product) {
+    var input = copyMap(product);
+    input.putIfAbsent("id", id());
+    return Product.fromMap(input);
+  }
+
+  private String importOffer(AppState st, Product p, Map<String, Object> offer, String method) {
+    var row = copyMap(offer);
+    row.putAll(m("id", id(), "product_id", p.id(), "method", method, "failed", false));
+    PriceObservation observation = PriceObservation.fromMap(row);
+    if (observation.checkedAt() == null
+        ? observation.checkedDate().isAfter(now().toLocalDate())
+        : observation.checkedAt().isAfter(now()))
       throw new IllegalArgumentException("미래 확인 날짜/시각은 입력할 수 없습니다.");
-    st.array("offers")
-        .removeIf(
-            x -> {
-              var a = obj(x);
-              return key(a).equals(key(o))
-                  && s(a, "checked_date").equals(s(o, "checked_date"))
-                  && s(a, "checked_at").equals(s(o, "checked_at"));
-            });
-    st.map("products").put(pid, p);
-    st.array("offers").add(o);
-    return validity(o, now()).equals("현재 유효") ? pid : null;
+    st.addProduct(p);
+    st.record(observation);
+    return observation.validity(now()).equals("현재 유효") ? p.id() : null;
   }
 
   /**
@@ -116,29 +72,28 @@ public final class ProductService extends Service {
           List<String> successes = new ArrayList<>();
           if (action.equals("QUERY")) {
             List<Object> result = new ArrayList<>();
-            for (var o : latest(st)) {
-              var p = st.product(s(o, "product_id"));
-              if (!s(request, "category").isEmpty()
-                  && !s(request, "category").equals(s(p, "category"))) continue;
-              if (!s(request, "store").isEmpty() && !s(request, "store").equals(s(o, "store")))
+            for (var o : st.latest()) {
+              var p = st.product(o.productId());
+              if (!s(request, "category").isEmpty() && !s(request, "category").equals(p.category()))
                 continue;
-              if (!s(request, "channel").isEmpty()
-                  && !s(request, "channel").equals(s(o, "channel"))) continue;
-              var row = copyMap(o);
+              if (!s(request, "store").isEmpty() && !s(request, "store").equals(o.store()))
+                continue;
+              if (!s(request, "channel").isEmpty() && !s(request, "channel").equals(o.channel()))
+                continue;
+              var row = o.toMap();
               row.putAll(
                   m(
                       "product",
-                      p,
+                      p.toMap(),
                       "unit_price",
-                      unitPrice(o, p),
+                      p.unitPrice(o.price()),
                       "validity",
-                      validity(o, now()),
+                      o.validity(now()),
                       "favorite",
-                      st.array("favorites").contains(s(p, "id"))));
+                      st.array("favorites").contains(p.id())));
               result.add(row);
             }
-            return ok(
-                "offers", result, "products", st.map("products"), "sources", st.map("sources"));
+            return ok("offers", result, "products", st.productJson(), "sources", st.map("sources"));
           }
           if (action.equals("SET_FAVORITE")) {
             String pid = text(request, "product_id");
@@ -156,7 +111,11 @@ public final class ProductService extends Service {
                   .put(store, Path.of(path).toAbsolutePath().normalize().toString());
           } else if (action.equals("UPSERT_MANUAL")) {
             String pid =
-                importOffer(st, obj(request.get("product")), obj(request.get("offer")), "직접 입력");
+                importOffer(
+                    st,
+                    readProduct(obj(request.get("product"))),
+                    obj(request.get("offer")),
+                    "직접 입력");
             if (pid != null) changed.add(pid);
           } else if (List.of("REFRESH", "AUTO_REFRESH").contains(action)) {
             boolean auto = action.equals("AUTO_REFRESH");
@@ -173,19 +132,24 @@ public final class ProductService extends Service {
                 if (path.isEmpty())
                   throw new IOException("피드가 설정되지 않았습니다. 직접 입력 또는 JSON 피드를 사용하세요.");
                 var feed = adapter.fetchOffers(store, Path.of(path));
-                Map<String, Object> products = m();
+                Map<String, Map<String, Object>> feedProducts = new LinkedHashMap<>();
                 for (var p : rows(feed.get("products"))) {
                   String pid = text(p, "id");
-                  if (products.put(pid, p) != null) throw new IllegalArgumentException("중복 상품 ID");
+                  if (feedProducts.put(pid, p) != null)
+                    throw new IllegalArgumentException("중복 상품 ID");
                 }
                 AppState candidate = st.copy();
                 Set<String> ids = new LinkedHashSet<>();
                 int count = 0;
-                for (var o : rows(feed.get("offers")))
-                  if (s(o, "store").equals(store)) {
+                for (var raw : rows(feed.get("offers")))
+                  if (s(raw, "store").equals(store)) {
                     count++;
                     String pid =
-                        importOffer(candidate, obj(products.get(s(o, "product_id"))), o, "JSON 피드");
+                        importOffer(
+                            candidate,
+                            Product.fromMap(obj(feedProducts.get(s(raw, "product_id")))),
+                            raw,
+                            "JSON 피드");
                     if (pid != null) ids.add(pid);
                   }
                 if (count == 0) throw new IllegalArgumentException("선택 마트의 가격 정보가 없습니다.");
@@ -200,9 +164,7 @@ public final class ProductService extends Service {
                     st.map("sources").containsKey(store) ? obj(st.map("sources").get(store)) : m();
                 status.putAll(m("failed", true, "error", e.getMessage()));
                 st.map("sources").put(store, status);
-                for (var o : st.offers())
-                  if (s(o, "store").equals(store) && !s(o, "method").equals("직접 입력"))
-                    o.put("failed", true);
+                st.failFeed(store);
               }
             }
           } else throw new IllegalArgumentException("지원하지 않는 상품 action입니다.");

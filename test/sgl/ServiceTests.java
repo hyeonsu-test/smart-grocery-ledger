@@ -31,6 +31,25 @@ public final class ServiceTests {
     }
   }
 
+  // Fixture edits describe on-disk v1 input, independently of the production model.
+  private record FixtureData(Map<String, Object> json) {
+    Map<String, Object> map(String key) {
+      return obj(json.get(key));
+    }
+
+    List<Object> array(String key) {
+      return list(json.get(key));
+    }
+
+    List<Map<String, Object>> offers() {
+      return rows(json.get("offers"));
+    }
+
+    void put(String key, Object value) {
+      json.put(key, value);
+    }
+  }
+
   private static final class Fixture implements AutoCloseable {
     final Path directory, file;
     final FailingRepository repo;
@@ -54,6 +73,7 @@ public final class ServiceTests {
 
     Map<String, Object> current(String pid) {
       return repo.snapshot().offers().stream()
+          .map(PriceObservation::toMap)
           .filter(
               o ->
                   s(o, "product_id").equals(pid)
@@ -63,10 +83,10 @@ public final class ServiceTests {
           .orElseThrow();
     }
 
-    void modify(java.util.function.Consumer<AppState> mutation) {
-      AppState st = repo.snapshot();
-      mutation.accept(st);
-      status(repo.saveAtomic(st), "OK");
+    void modify(java.util.function.Consumer<FixtureData> mutation) {
+      var fixture = new FixtureData(repo.snapshot().toMap());
+      mutation.accept(fixture);
+      status(repo.saveAtomic(new AppState(fixture.json)), "OK");
     }
 
     Map<String, Object> evaluate() {
@@ -75,7 +95,13 @@ public final class ServiceTests {
 
     Map<String, Object> manual(Map<String, Object> offer) {
       return products.manageProducts(
-          m("action", "UPSERT_MANUAL", "product", repo.snapshot().product("milk"), "offer", offer));
+          m(
+              "action",
+              "UPSERT_MANUAL",
+              "product",
+              repo.snapshot().product("milk").toMap(),
+              "offer",
+              offer));
     }
 
     @Override
@@ -412,30 +438,31 @@ public final class ServiceTests {
           for (var e : expected.entrySet())
             decimal(
                 PriceService.normalizeUnitPrice(
-                    f.current(e.getKey()), f.repo.snapshot().product(e.getKey())),
+                    f.current(e.getKey()), f.repo.snapshot().product(e.getKey()).toMap()),
                 e.getValue());
         });
     test(
         "Price freshness boundary and absent timestamp",
         f -> {
           var o = f.current("milk");
+          o.put("checked_date", NOW.minusDays(1).toLocalDate().toString());
           o.put("checked_at", NOW.minusHours(24).toString());
-          eq(validity(o, NOW), "오래됨");
+          eq(PriceObservation.fromMap(o).validity(NOW), "오래됨");
           o.put("checked_at", "");
-          eq(validity(o, NOW), "확인 시각 없음");
+          eq(PriceObservation.fromMap(o).validity(NOW), "확인 시각 없음");
         });
     test(
         "Price future time and event bounds",
         f -> {
           var o = f.current("milk");
           o.put("checked_at", NOW.plusSeconds(1).toString());
-          eq(validity(o, NOW), "미래 확인 시각");
+          eq(PriceObservation.fromMap(o).validity(NOW), "미래 확인 시각");
           o.put("checked_at", NOW.toString());
           o.put("start", "2026-11-03");
-          eq(validity(o, NOW), "행사 시작 전");
+          eq(PriceObservation.fromMap(o).validity(NOW), "행사 시작 전");
           o.put("start", "");
           o.put("end", "2026-11-01");
-          eq(validity(o, NOW), "만료");
+          eq(PriceObservation.fromMap(o).validity(NOW), "만료");
         });
     test(
         "UC04 failed and expired sources excluded",
@@ -468,13 +495,13 @@ public final class ServiceTests {
     test(
         "UC04 numeric-equivalent sizes and bundle counts compare",
         f -> {
-          var p = f.repo.snapshot().product("milk");
+          var p = f.repo.snapshot().product("milk").toMap();
           var b = copyMap(p);
           b.put("size", "1000.0");
           b.put("pack_count", 2);
-          check(comparable(p, b));
+          check(Product.fromMap(p).comparableTo(Product.fromMap(b)));
           b.put("brand", "다른브랜드");
-          check(!comparable(p, b));
+          check(!Product.fromMap(p).comparableTo(Product.fromMap(b)));
         });
     test(
         "UC04 empty and reversed history",
@@ -507,7 +534,7 @@ public final class ServiceTests {
           earlier.put("checked_at", "2026-11-02T11:00+09:00");
           var later = copyMap(earlier);
           later.put("checked_at", "2026-11-02T03:00Z");
-          check(observationCompare(later, earlier) > 0);
+          check(PriceObservation.fromMap(later).compareTime(PriceObservation.fromMap(earlier)) > 0);
         });
     test(
         "UC05 preceding 28 days excludes today",
@@ -635,12 +662,13 @@ public final class ServiceTests {
           eq(list(r.get("updated")).size(), 0);
           check(
               f.repo.snapshot().offers().stream()
+                  .map(PriceObservation::toMap)
                   .anyMatch(a -> s(a, "price").equals("1234") && s(a, "checked_at").isEmpty()));
         });
     test(
         "UC03 immutable product specification",
         f -> {
-          var p = f.repo.snapshot().product("milk");
+          var p = f.repo.snapshot().product("milk").toMap();
           p.put("size", "500");
           status(
               f.products.manageProducts(
@@ -671,7 +699,7 @@ public final class ServiceTests {
               Json.stringify(
                   m(
                       "products",
-                      List.of(f.repo.snapshot().product("milk")),
+                      List.of(f.repo.snapshot().product("milk").toMap()),
                       "offers",
                       List.of(f.current("milk")))));
           status(
@@ -693,6 +721,7 @@ public final class ServiceTests {
           eq(s(obj(f.repo.snapshot().map("sources").get("홈플러스")), "last_success"), old);
           check(
               f.repo.snapshot().offers().stream()
+                  .map(PriceObservation::toMap)
                   .filter(o -> s(o, "store").equals("홈플러스"))
                   .allMatch(o -> yes(o, "failed")));
         });
@@ -709,14 +738,17 @@ public final class ServiceTests {
               Json.stringify(
                   m(
                       "products",
-                      List.of(f.repo.snapshot().product("milk")),
+                      List.of(f.repo.snapshot().product("milk").toMap()),
                       "offers",
                       List.of(a, b))));
           f.products.manageProducts(
               m("action", "CONFIGURE_FEED", "store", "이마트", "path", feed.toString()));
           status(
               f.products.manageProducts(m("action", "REFRESH", "store", "이마트")), "REFRESH_FAILED");
-          check(f.repo.snapshot().offers().stream().noneMatch(o -> s(o, "price").equals("1111")));
+          check(
+              f.repo.snapshot().offers().stream()
+                  .map(PriceObservation::toMap)
+                  .noneMatch(o -> s(o, "price").equals("1111")));
         });
     test(
         "UC03 automatic attempt guard survives restart",
@@ -747,7 +779,11 @@ public final class ServiceTests {
           Files.writeString(
               feed,
               Json.stringify(
-                  m("products", List.of(f.repo.snapshot().product("milk")), "offers", List.of(o))));
+                  m(
+                      "products",
+                      List.of(f.repo.snapshot().product("milk").toMap()),
+                      "offers",
+                      List.of(o))));
           f.products.manageProducts(
               m("action", "CONFIGURE_FEED", "store", "이마트", "path", feed.toString()));
           var r = f.products.manageProducts(m("action", "REFRESH", "store", "이마트"));
@@ -760,7 +796,7 @@ public final class ServiceTests {
           check(f.directory.toString().contains("한글 space"));
           Repository reloaded = new Repository(f.file);
           check(reloaded.readError().isEmpty());
-          eq(reloaded.snapshot().product("milk").get("name"), "데일리 우유 1L");
+          eq(reloaded.snapshot().product("milk").name(), "데일리 우유 1L");
         });
     test(
         "UC03 manual refresh only attempts configured sources",
@@ -771,7 +807,7 @@ public final class ServiceTests {
               Json.stringify(
                   m(
                       "products",
-                      List.of(f.repo.snapshot().product("milk")),
+                      List.of(f.repo.snapshot().product("milk").toMap()),
                       "offers",
                       List.of(f.current("milk")))));
           f.products.manageProducts(
@@ -779,6 +815,7 @@ public final class ServiceTests {
           status(f.products.manageProducts(m("action", "REFRESH")), "OK");
           check(
               f.repo.snapshot().offers().stream()
+                  .map(PriceObservation::toMap)
                   .filter(o -> !s(o, "store").equals("이마트"))
                   .noneMatch(o -> yes(o, "failed")));
         });
@@ -797,11 +834,12 @@ public final class ServiceTests {
           status(
               f.products.manageProducts(m("action", "REFRESH", "store", "이마트")), "REFRESH_FAILED");
           var manual =
-              latest(f.repo.snapshot()).stream()
+              f.repo.snapshot().latest().stream()
+                  .map(PriceObservation::toMap)
                   .filter(o -> s(o, "method").equals("직접 입력"))
                   .findFirst()
                   .orElseThrow();
-          eq(validity(manual, NOW), "현재 유효");
+          eq(PriceObservation.fromMap(manual).validity(NOW), "현재 유효");
         });
     test(
         "UC03 omitted optional channel is normalized before persistence",
@@ -812,6 +850,7 @@ public final class ServiceTests {
           status(f.manual(offer), "OK");
           var saved =
               f.repo.snapshot().offers().stream()
+                  .map(PriceObservation::toMap)
                   .filter(o -> s(o, "price").equals("2501"))
                   .findFirst()
                   .orElseThrow();
@@ -853,7 +892,8 @@ public final class ServiceTests {
                                   && s(obj(o), "product_id").equals("milk")
                                   && !List.of("3000", "2400").contains(s(obj(o), "price"))));
           var latest =
-              Data.latest(f.repo.snapshot()).stream()
+              f.repo.snapshot().latest().stream()
+                  .map(PriceObservation::toMap)
                   .filter(o -> s(o, "store").equals("이마트") && s(o, "product_id").equals("milk"))
                   .findFirst()
                   .orElseThrow();
@@ -902,10 +942,46 @@ public final class ServiceTests {
                       "action",
                       "UPSERT_MANUAL",
                       "product",
-                      f.repo.snapshot().product("milk"),
+                      f.repo.snapshot().product("milk").toMap(),
                       "offer",
                       offer)),
               "OK");
+        });
+    test(
+        "Repeating decimal unit prices retain precision when ranked and displayed",
+        f -> {
+          var result = f.price.analyzePrices(m("mode", "COMPARE", "product_id", "tofu"));
+          status(result, "OK");
+          var ranked = rows(result.get("ranked"));
+          eq(ranked.size(), 3);
+          var row = OfferRow.read(ranked.get(0), f.repo.snapshot().product("tofu"));
+          decimal(row.unitPrice(), "533.3333333333333333333333333333333");
+        });
+    test(
+        "Legacy v1 ledger loads into typed objects and round trips after a save",
+        f -> {
+          byte[] fixture;
+          try (var input = ServiceTests.class.getResourceAsStream("/legacy-ledger-v1.json")) {
+            if (input == null) throw new AssertionError("legacy fixture missing");
+            fixture = input.readAllBytes();
+          }
+          Path path = f.directory.resolve("legacy.json");
+          Files.write(path, fixture);
+          Repository repo = new Repository(path);
+          eq(repo.readError(), "");
+          AppState state = repo.snapshot();
+          Product milk = state.product("milk");
+          PriceObservation first = state.offers().get(0);
+          decimal(milk.size(), "1000");
+          decimal(milk.unitPrice(first.price()), "260");
+          eq(first.checkedAt().getOffset().toString(), "+09:00");
+          eq(state.records().size(), 1);
+          status(repo.saveAtomic(state), "OK");
+          AppState reloaded = new Repository(path).snapshot();
+          eq(reloaded.product("milk"), milk);
+          eq(reloaded.offers(), state.offers());
+          eq(reloaded.records(), state.records());
+          eq(reloaded.map("budgets"), state.map("budgets"));
         });
     System.out.println(
         "RESULT passed=" + passed + " failed=" + failed + " total=" + (passed + failed));

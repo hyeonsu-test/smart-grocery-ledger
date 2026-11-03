@@ -1,0 +1,42 @@
+@startuml
+!pragma layout smetana
+skinparam dpi 170
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam defaultFontName Arial
+skinparam defaultFontSize 15
+skinparam classBackgroundColor #FFFFFF
+skinparam classBorderColor #41686A
+skinparam classHeaderBackgroundColor #E7F1EF
+skinparam ArrowColor #41686A
+hide empty members
+top to bottom direction
+class Repository {
+  - state : AppState
+  + snapshot() : AppState
+  + saveAtomic(candidate : AppState) : Map
+}
+class AppState {
+  - catalog : Map<String, Product>
+  - observations : List<PriceObservation>
+  + toMap() : Map
+  ~ record(offer : PriceObservation)
+}
+class Product <<record>> {
+  + id() : String
+  + size() : BigDecimal
+  + packCount() : long
+  + unitPrice(packagePrice : BigDecimal) : BigDecimal
+  + comparableTo(other : Product) : boolean
+}
+class PriceObservation <<record>> {
+  + productId() : String
+  + price() : BigDecimal
+  + checkedAt() : OffsetDateTime
+  + validity(now : OffsetDateTime) : String
+}
+Repository "1" *-- "1" AppState : committed state
+AppState "1" --> "0..*" Product : catalog
+AppState "1" --> "0..*" PriceObservation : observations
+PriceObservation "0..*" --> "1" Product : by productId
+@enduml

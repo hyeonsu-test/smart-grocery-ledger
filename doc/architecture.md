@@ -1,25 +1,28 @@
-# 객체 구조와 서비스 API
+# 화면과 가격 모델
 
-화면에서 내역 하나를 저장할 때 `LedgerFrame`은 날짜와 금액을 읽어 `LedgerService`에 전달합니다. 서비스는 저장된 상태의 복사본에 변경을 적용합니다. `Repository`는 복사본을 검증하고 임시 파일을 쓴 뒤 기존 파일을 원자적으로 교체합니다. 저장에 실패하면 사용자가 입력한 내역과 기존 파일을 보존합니다.
+상품 화면에서 우유를 골라 **실제 구매 기록**을 누르면 선택한 상품과 가격이 가계부 탭으로 전달됩니다. 가계부 탭은 금액과 메모를 먼저 입력란에 표시합니다. **내역 저장**을 눌렀을 때만 가계부 서비스가 거래를 저장합니다.
 
-| 책임 | 담당 객체 | 코드를 읽는 출발점 |
+## 화면별 책임
+
+| 화면 | 담당 클래스 | 맡은 일 |
 |---|---|---|
-| 화면과 사용자 입력 | `LedgerFrame` | 다섯 탭을 구성하고 버튼 이벤트를 서비스 호출로 연결합니다. [소스](../src/sgl/LedgerFrame.java) |
-| 내역과 월 식비 | `LedgerService`, `BudgetService` | 실제 결제, 월별 집계, 예산, 장보기 초안과 저장을 담당합니다. [가계부](../src/sgl/LedgerService.java) · [예산](../src/sgl/BudgetService.java) |
-| 가격 수집과 비교 | `ProductService`, `MartAdapter`, `PriceService` | 파일 읽기, 가격 등록, 단위 환산과 이력 조회를 나누어 처리합니다. [상품](../src/sgl/ProductService.java) · [피드](../src/sgl/MartAdapter.java) · [가격](../src/sgl/PriceService.java) |
-| 구매 목표와 알림 | `TargetService` | 직전 28일 기준과 개인 목표를 적용하고 같은 날짜의 중복 알림을 방지합니다. [소스](../src/sgl/TargetService.java) |
-| 상태와 저장 | `AppState`, `Repository` | 상태 구조와 검증은 `AppState`가 맡고, 현재 상태와 디스크 파일은 `Repository`가 관리합니다. [상태](../src/sgl/AppState.java) · [저장](../src/sgl/Repository.java) |
+| 창 | [LedgerFrame](../src/sgl/LedgerFrame.java) | 다섯 탭 구성, 이동·종료 확인, 공통 월과 새 가격 반영 |
+| 가계부 | [LedgerTab](../src/sgl/LedgerTab.java) | 수입·지출 입력, 선택한 거래 수정, 월 합계 |
+| 예산 · 장보기 | [BudgetTab](../src/sgl/BudgetTab.java) | 예산 입력, 항목 편집, 장보기 초안·저장 |
+| 상품 · 할인 | [ProductTab](../src/sgl/ProductTab.java) | 상품 선택, 가격 직접 입력, 비동기 피드 갱신 |
+| 가격 비교 · 이력 | [PriceTab](../src/sgl/PriceTab.java) | 단위 가격 순위, 기간·지점 선택, 이력 그래프 |
+| 구매 목표 · 알림 | [TargetTab](../src/sgl/TargetTab.java) | 개인 목표 편집, 충족 가격과 알림 확인 |
 
-## 객체가 협력하는 방식
+각 탭은 자기 입력란과 선택 상태를 보유합니다. 공통 상위 클래스 `TabView`의 `hasDraft()`와 `discardDraft()`를 통해 창이 이동 전에 미저장 편집을 확인합니다. [화면 클래스 다이어그램](class-storage-ui.png)
 
-다섯 서비스는 추상 클래스 `Service`를 상속합니다. 공통 진입점 `call`이 같은 저장소의 작업을 순차적으로 처리하고 읽기 오류와 잘못된 입력을 공통 결과로 변환합니다. 화면이 서비스를 만들 때 같은 저장소와 시계(`Clock`)를 전달하므로, 테스트에서는 고정된 시각으로 가격 유효 기간과 목표 알림을 재현할 수 있습니다. [공통 서비스](../src/sgl/Service.java)
+## 상품과 가격
 
-예를 들어 JSON 피드를 갱신하면 `ProductService`가 `MartAdapter`에 파일 읽기를 맡깁니다. 한 마트의 자료를 모두 검증한 뒤 저장하고, 유효 가격을 저장한 뒤에만 연결된 `TargetService`에 목표 판정을 요청합니다. 알림 이력이 저장되면 화면에 표시할 알림이 반환됩니다. [서비스 클래스 다이어그램](class-services.png)
+`Product`는 상품 ID, 품목, 규격, 낱개 용량, 단위와 묶음 수를 보유하는 불변 Java 레코드입니다. `unitPrice`는 묶음 가격을 기준 단위로 환산합니다. 우유 1,000ml 한 팩이 2,600원이면 100ml당 가격은 260원입니다. `comparableTo`는 포장 개수가 다른 경우에도 품목, 브랜드, 규격, 낱개 용량과 단위가 일치하는지 확인합니다. [Product 소스](../src/sgl/Product.java)
 
-저장소가 보유한 상태는 비공개입니다. `snapshot()`은 독립된 상태를 반환하고 `AppState.toMap()`도 내부 컬렉션의 복사본을 반환합니다. 테스트의 `FailingRepository`는 파일 교체 메서드를 재정의해 저장 실패를 일으킵니다. 같은 가계부 서비스로 파일과 메모리가 보존되는지 검사할 수 있습니다. [화면·저장 클래스 다이어그램](class-storage-ui.png) · [저장 실패와 복사본 격리 테스트](../test/sgl/ServiceTests.java)
+`PriceObservation`은 어느 상품의 가격을 언제, 어느 마트·지점에서, 어떤 조건으로 확인했는지 기록합니다. 금액은 `BigDecimal`, 확인 시각은 `OffsetDateTime`입니다. 행사 기간과 확인 후 24시간 경계를 검사해 현재 유효 여부를 판정합니다. 상품·비교 탭은 이 객체와 상품이 들어 있는 `OfferRow`를 표시합니다. [가격 관측 소스](../src/sgl/PriceObservation.java) · [상품과 가격 클래스 다이어그램](class-domain.png)
 
-## API와 변경 범위
+## 저장과 서비스 API
 
-서비스의 공개 작업 메서드는 `Map<String, Object>`로 요청을 받고 결과의 `status`를 반환합니다. 예를 들어 `LedgerService.manageLedger`는 `action=SEARCH`와 `month=2026-11`을 받아 해당 월의 내역과 집계를 반환합니다. 문자열 키와 값의 타입은 실행 시 검증하므로 호출 코드를 바꿀 때는 Javadoc의 메서드 계약을 함께 확인하세요. [API 화면 예시](screenshots/api/07-javadoc-method.png)
+`AppState`는 상품을 ID로 찾는 `Map<String, Product>`와 가격 관측 목록 `List<PriceObservation>`을 보유합니다. `Repository`가 읽기·쓰기를 담당하며 JSON 파일의 기존 필드 이름과 버전 1 구조를 사용합니다. 상태 복사본은 독립된 컬렉션을 갖고 불변 상품·관측값을 공유합니다. [상태](../src/sgl/AppState.java) · [저장소](../src/sgl/Repository.java)
 
-상품과 가격 관측도 맵으로 표현하고 단위 환산·유효성 판정에는 `Data`의 정적 함수를 사용합니다. 다섯 탭의 입력, 선택, 미저장 상태는 한 `LedgerFrame`에서 조정합니다. 탭 이동이나 공통 가격 규칙을 변경할 때는 영향을 받는 다른 화면의 동작도 확인해야 합니다. [가격 규칙](../src/sgl/Data.java) · [Swing 화면 테스트](../test/sgl/UiSmokeTests.java)
+다섯 서비스는 같은 저장소와 시계를 사용하는 `Service`를 상속합니다. `ProductService`는 연결된 피드를 `MartAdapter`로 읽고 새 가격을 저장한 뒤 `TargetService`에 목표 판정을 요청합니다. 공개 서비스 요청·결과와 JSON 입출력은 기존 맵 계약을 사용합니다. 입력 키, 결과 상태와 오류는 실행 창의 Javadoc API 매뉴얼에서 확인할 수 있습니다. [서비스 클래스 다이어그램](class-services.png) · [빌드와 검증](verification.md)

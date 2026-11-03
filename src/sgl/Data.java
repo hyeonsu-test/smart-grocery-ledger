@@ -117,98 +117,10 @@ final class Data {
     return BigDecimal.valueOf(c.equals("계란") || c.equals("라면") ? 1 : 100);
   }
 
-  static void product(Map<String, Object> p) {
-    String c = text(p, "category");
-    if (!CATEGORIES.contains(c) || !unit(c).equals(text(p, "unit")))
-      throw new IllegalArgumentException("품목별 단위를 확인하세요: 우유 ml, 계란 개, 라면 봉, 쌀·두부 g");
-    text(p, "id");
-    text(p, "name");
-    text(p, "brand");
-    text(p, "spec");
-    num(p.get("size"), false);
-    integer(p.get("pack_count"), false);
-  }
-
   static void conditions(Map<String, Object> r) {
     if (!List.of("온라인", "오프라인").contains(def(r, "channel", "온라인")))
       throw new IllegalArgumentException("판매 경로를 확인하세요.");
     if (def(r, "condition", "일반").isBlank()) throw new IllegalArgumentException("가격 조건을 입력하세요.");
-  }
-
-  static void offer(Map<String, Object> o, Map<String, Object> p) {
-    product(p);
-    if (!STORES.contains(s(o, "store"))) throw new IllegalArgumentException("지원 마트를 선택하세요.");
-    conditions(o);
-    num(o.get("price"), false);
-    url(o.get("url"));
-    String d = day(o.get("checked_date"));
-    if (!s(o, "checked_at").isEmpty()
-        && !OffsetDateTime.parse(s(o, "checked_at")).toLocalDate().toString().equals(d))
-      throw new IllegalArgumentException("확인 날짜와 시간대 포함 시각이 일치해야 합니다.");
-    for (String k : List.of("start", "end")) if (!s(o, k).isEmpty()) day(o.get(k));
-    if (!s(o, "start").isEmpty()
-        && !s(o, "end").isEmpty()
-        && s(o, "start").compareTo(s(o, "end")) > 0)
-      throw new IllegalArgumentException("행사 기간을 확인하세요.");
-  }
-
-  static BigDecimal unitPrice(Map<String, Object> o, Map<String, Object> p) {
-    product(p);
-    return num(o.get("price"), false)
-        .multiply(unitBase(s(p, "category")))
-        .divide(num(p.get("size"), false).multiply(num(p.get("pack_count"), false)), MC);
-  }
-
-  static String validity(Map<String, Object> o, OffsetDateTime now) {
-    if (yes(o, "failed")) return "갱신 실패";
-    if (s(o, "checked_at").isEmpty()) return "확인 시각 없음";
-    Duration age = Duration.between(OffsetDateTime.parse(s(o, "checked_at")), now);
-    if (age.isNegative()) return "미래 확인 시각";
-    if (age.compareTo(Duration.ofHours(24)) >= 0) return "오래됨";
-    String d = now.toLocalDate().toString();
-    if (!s(o, "start").isEmpty() && d.compareTo(s(o, "start")) < 0) return "행사 시작 전";
-    if (!s(o, "end").isEmpty() && d.compareTo(s(o, "end")) > 0) return "만료";
-    return "현재 유효";
-  }
-
-  static boolean historical(Map<String, Object> o) {
-    String d = s(o, "checked_date");
-    return (s(o, "start").isEmpty() || s(o, "start").compareTo(d) <= 0)
-        && (s(o, "end").isEmpty() || s(o, "end").compareTo(d) >= 0);
-  }
-
-  static String key(Map<String, Object> o) {
-    return Json.stringify(
-        List.of(
-            s(o, "product_id"),
-            s(o, "store"),
-            s(o, "channel"),
-            def(o, "branch", "전체"),
-            def(o, "condition", "일반")));
-  }
-
-  static int observationCompare(Map<String, Object> a, Map<String, Object> b) {
-    String x = s(a, "checked_at"), y = s(b, "checked_at");
-    if (!x.isEmpty() && !y.isEmpty())
-      return OffsetDateTime.parse(x).toInstant().compareTo(OffsetDateTime.parse(y).toInstant());
-    int date = s(a, "checked_date").compareTo(s(b, "checked_date"));
-    if (date != 0) return date;
-    return x.compareTo(y);
-  }
-
-  static List<Map<String, Object>> latest(AppState state) {
-    Map<String, Map<String, Object>> last = new LinkedHashMap<>();
-    for (var o : state.offers()) {
-      String k = key(o);
-      if (!last.containsKey(k) || observationCompare(o, last.get(k)) >= 0) last.put(k, o);
-    }
-    return new ArrayList<>(last.values());
-  }
-
-  static boolean comparable(Map<String, Object> a, Map<String, Object> b) {
-    for (String k : List.of("category", "brand", "spec", "unit"))
-      if (!s(a, k).equals(s(b, k))) return false;
-    return num(a.get("size"), false).compareTo(num(b.get("size"), false)) == 0;
   }
 
   static Map<String, Object> monthly(AppState state, String month) {

@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "records": [
+    {
+      "id": "demo-0",
+      "date": "2026-11-01",
+      "kind": "수입",
+      "category": "용돈",
+      "amount": 600000,
+      "memo": "이번 달 생활비",
+      "store": "",
+      "product_id": "",
+      "quantity": 1
+    }
+  ],
+  "budgets": {
+    "2026-11": 180000
+  },
+  "plans": {},
+  "products": {
+    "milk": {
+      "id": "milk",
+      "category": "우유",
+      "name": "데일리 우유 1L",
+      "brand": "시연식품",
+      "spec": "기본형",
+      "size": "1000",
+      "unit": "ml",
+      "pack_count": 1
+    }
+  },
+  "offers": [
+    {
+      "id": "milk-0-0",
+      "product_id": "milk",
+      "store": "이마트",
+      "branch": "시연 지점",
+      "channel": "온라인",
+      "price": "2600",
+      "condition": "일반",
+      "url": "https://example.com/",
+      "checked_date": "2026-11-02",
+      "checked_at": "2026-11-02T16:05:12.116807900+09:00",
+      "start": "",
+      "end": "",
+      "method": "시연 데이터",
+      "failed": false
+    }
+  ],
+  "favorites": [
+    "milk"
+  ],
+  "targets": {},
+  "alerts": {},
+  "sources": {
+    "이마트": {
+      "last_success": "2026-11-02T16:05:12.116807900+09:00",
+      "failed": false,
+      "error": ""
+    },
+    "홈플러스": {
+      "last_success": "2026-11-02T16:05:12.116807900+09:00",
+      "failed": false,
+      "error": ""
+    },
+    "코스트코": {
+      "last_success": "2026-11-02T16:05:12.116807900+09:00",
+      "failed": false,
+      "error": ""
+    }
+  },
+  "feed_paths": {},
+  "auto_attempt": "",
+  "demo": true
+}

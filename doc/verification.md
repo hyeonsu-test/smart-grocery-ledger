@@ -22,15 +22,17 @@ Swing 검사를 실행하려면 그래픽 화면이 필요합니다. JAR만 받�
 java -jar SmartGroceryLedger.jar --smoke-test
 ```
 
-## 0.4.2 실행 결과
+## 0.5.0 실행 결과
 
 | 환경 | 확인한 동작 | 실행 로그 |
 |---|---|---|
-| Windows 11 · Java 21.0.9 | 서비스 54개와 Swing 25항목 통과. JAR의 다섯 탭 실행 확인 | [서비스](../test-log/service-tests.log) · [Swing](../test-log/swing-actions.log) · [JAR](../test-log/jar-smoke.log) |
+| Windows 11 · Java 21.0.9 | 서비스 56개와 Swing 28항목 통과. JAR의 다섯 탭 실행 확인 | [서비스](../test-log/service-tests.log) · [Swing](../test-log/swing-actions.log) · [JAR](../test-log/jar-smoke.log) |
 | Windows 11 · Java 26 | 배포 JAR의 서비스·저장·재읽기 검사 통과 | [JAR](../test-log/windows-java26-jar.log) |
-| Ubuntu 26.04 · WSL2 · Java 17.0.17 | 화면 없이 서비스 54개와 동일 배포 JAR 검사 통과 | [서비스](../test-log/linux-service-tests.log) · [JAR](../test-log/linux-jar-smoke.log) |
+| Ubuntu 26.04 · WSL2 · Java 17.0.17 | 화면 없이 서비스 56개와 동일 배포 JAR 검사 통과 | [서비스](../test-log/linux-service-tests.log) · [JAR](../test-log/linux-jar-smoke.log) |
 
-Linux GUI와 macOS 실행은 미검증입니다. 배포 JAR의 SHA-256은 `6481866cc2307e29e686dca3a6a31d02612ae05cb3010be4b37ae616eca49faf`입니다. [배포 정보](../release-manifest.json)
+Linux GUI와 macOS 실행은 미검증입니다. 배포 JAR의 SHA-256은 `e8c85af5fe18fe4b55b483f26d271b20b7e0aad8a2e7f7bbc782ea0f1aa82703`입니다. [배포 정보](../release-manifest.json)
+
+이전 버전에서 생성한 가계부를 열어 상품 규격, 가격, 시간대, 거래, 예산을 저장 후 다시 읽는 검사도 포함합니다. 반복소수 단가를 화면에 표시하고 정렬하는 경로, 상품 탭에서 가계부 탭으로 이동해 저장할 때 지출이 한 번만 생기는 경로를 확인합니다. [호환성 검사 자료](../test/fixtures/legacy-ledger-v1.json)
 
 서비스 검사는 독립된 임시 폴더에서 실제 저장, 저장 실패 시 복구, 월 이동, 가격 유효 기간, 단위 환산, 목표 알림의 재실행 중복 방지를 확인합니다. Swing 검사는 저장 버튼, 장보기 초안, 미저장 입력과 피드 갱신 후 상품 목록 반영을 확인합니다. 실패가 있으면 검사 프로세스가 종료 코드 1을 반환합니다. [서비스 검사 코드](../test/sgl/ServiceTests.java) · [화면 검사 코드](../test/sgl/UiSmokeTests.java)
 

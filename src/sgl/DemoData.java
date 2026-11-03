@@ -30,61 +30,36 @@ public final class DemoData {
     };
     for (Object[] a : specs) {
       String pid = (String) a[0];
-      st.map("products")
-          .put(
+      st.addProduct(
+          new Product(
               pid,
-              m(
-                  "id",
-                  pid,
-                  "category",
-                  a[1],
-                  "name",
-                  a[2],
-                  "brand",
-                  "시연식품",
-                  "spec",
-                  "기본형",
-                  "size",
-                  a[3],
-                  "unit",
-                  a[4],
-                  "pack_count",
-                  a[5]));
+              (String) a[1],
+              (String) a[2],
+              "시연식품",
+              "기본형",
+              new java.math.BigDecimal((String) a[3]),
+              (String) a[4],
+              (int) a[5]));
       for (int ago : new int[] {28, 24, 20, 16, 12, 8, 4, 1, 0})
         for (int i = 0; i < STORES.size(); i++) {
           OffsetDateTime stamp = now.minusDays(ago);
           long price = (int) a[6] + (ago == 0 ? -200 + i * 120 : i * 150 + (ago % 7) * 40);
-          st.array("offers")
-              .add(
-                  m(
-                      "id",
-                      pid + "-" + ago + "-" + i,
-                      "product_id",
-                      pid,
-                      "store",
-                      STORES.get(i),
-                      "branch",
-                      "시연 지점",
-                      "channel",
-                      "온라인",
-                      "price",
-                      String.valueOf(price),
-                      "condition",
-                      "일반",
-                      "url",
-                      "https://example.com/",
-                      "checked_date",
-                      stamp.toLocalDate().toString(),
-                      "checked_at",
-                      stamp.toString(),
-                      "start",
-                      "",
-                      "end",
-                      "",
-                      "method",
-                      "시연 데이터",
-                      "failed",
-                      false));
+          st.record(
+              new PriceObservation(
+                  pid + "-" + ago + "-" + i,
+                  pid,
+                  STORES.get(i),
+                  "시연 지점",
+                  "온라인",
+                  "일반",
+                  java.math.BigDecimal.valueOf(price),
+                  "https://example.com/",
+                  stamp.toLocalDate(),
+                  stamp,
+                  null,
+                  null,
+                  "시연 데이터",
+                  false));
         }
     }
     Object[][] entries = {

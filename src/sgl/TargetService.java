@@ -37,23 +37,24 @@ public final class TargetService extends Service {
       AppState st = repo.snapshot();
       var p = st.product(productId);
       LocalDate today = now().toLocalDate(), begin = today.minusDays(28);
-      Map<String, Map<String, Object>> latest = new LinkedHashMap<>();
+      record DailyKey(String day, PriceObservation.Key key) {}
+      Map<DailyKey, PriceObservation> latest = new LinkedHashMap<>();
       for (var o : st.offers()) {
-        String d = s(o, "checked_date");
-        if (!historical(o)
-            || !comparable(p, st.product(s(o, "product_id")))
-            || !s(o, "channel").equals(channel)
-            || !def(o, "condition", "일반").equals(condition)
+        String d = o.checkedDate().toString();
+        if (!o.inPeriod(o.checkedDate())
+            || !p.comparableTo(st.product(o.productId()))
+            || !o.channel().equals(channel)
+            || !o.condition().equals(condition)
             || d.compareTo(begin.toString()) < 0
             || d.compareTo(today.toString()) >= 0) continue;
-        String k = d + key(o);
-        if (!latest.containsKey(k) || observationCompare(o, latest.get(k)) >= 0) latest.put(k, o);
+        var k = new DailyKey(d, o.key());
+        if (!latest.containsKey(k) || o.compareTime(latest.get(k)) >= 0) latest.put(k, o);
       }
       Map<String, List<BigDecimal>> daily = new TreeMap<>();
       for (var o : latest.values())
         daily
-            .computeIfAbsent(s(o, "checked_date"), k -> new ArrayList<>())
-            .add(unitPrice(o, st.product(s(o, "product_id"))));
+            .computeIfAbsent(o.checkedDate().toString(), k -> new ArrayList<>())
+            .add(st.product(o.productId()).unitPrice(o.price()));
       BigDecimal sum = BigDecimal.ZERO;
       for (var values : daily.values())
         sum =
@@ -146,15 +147,15 @@ public final class TargetService extends Service {
                     ? (BigDecimal) calc.get("basis")
                     : num(target.get("price"), false);
             List<Object> matches = new ArrayList<>();
-            for (var o : latest(st))
-              if (s(o, "product_id").equals(pid)
-                  && s(o, "channel").equals(def(target, "channel", "온라인"))
-                  && def(o, "condition", "일반").equals(def(target, "condition", "일반"))
-                  && validity(o, now()).equals("현재 유효")
+            for (var o : st.latest())
+              if (o.productId().equals(pid)
+                  && o.channel().equals(def(target, "channel", "온라인"))
+                  && o.condition().equals(def(target, "condition", "일반"))
+                  && o.validity(now()).equals("현재 유효")
                   && threshold != null
-                  && unitPrice(o, st.product(pid)).compareTo(threshold) <= 0) {
-                var row = copyMap(o);
-                row.put("unit_price", unitPrice(o, st.product(pid)));
+                  && st.product(pid).unitPrice(o.price()).compareTo(threshold) <= 0) {
+                var row = o.toMap();
+                row.put("unit_price", st.product(pid).unitPrice(o.price()));
                 matches.add(row);
               }
             String status = "NOT_EVALUATED";
@@ -170,7 +171,7 @@ public final class TargetService extends Service {
               if (status.equals("SENT")) {
                 st.map("alerts").put(pid, today);
                 notifications.add(
-                    m("product_id", pid, "name", s(st.product(pid), "name"), "matches", matches));
+                    m("product_id", pid, "name", st.product(pid).name(), "matches", matches));
               }
             }
             calc.putAll(
@@ -178,7 +179,7 @@ public final class TargetService extends Service {
                     "product_id",
                     pid,
                     "name",
-                    s(st.product(pid), "name"),
+                    st.product(pid).name(),
                     "target",
                     target,
                     "applied",

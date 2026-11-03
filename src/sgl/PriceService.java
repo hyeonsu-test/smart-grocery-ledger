@@ -28,7 +28,7 @@ public final class PriceService extends Service {
    */
   public static BigDecimal normalizeUnitPrice(
       Map<String, Object> offer, Map<String, Object> product) {
-    return unitPrice(offer, product);
+    return Product.fromMap(product).unitPrice(num(offer.get("price"), false));
   }
 
   /**
@@ -54,23 +54,23 @@ public final class PriceService extends Service {
               condition = def(request, "condition", "일반");
           if (mode.equals("COMPARE")) {
             List<Object> ranked = new ArrayList<>(), excluded = new ArrayList<>();
-            for (var o : latest(st)) {
-              var other = st.product(s(o, "product_id"));
-              if (!comparable(other, p)
-                  || !s(o, "channel").equals(channel)
-                  || !def(o, "condition", "일반").equals(condition)) continue;
-              var row = copyMap(o);
+            for (var o : st.latest()) {
+              var other = st.product(o.productId());
+              if (!other.comparableTo(p)
+                  || !o.channel().equals(channel)
+                  || !o.condition().equals(condition)) continue;
+              var row = o.toMap();
               row.putAll(
                   m(
                       "name",
-                      s(other, "name"),
+                      other.name(),
                       "unit_price",
-                      unitPrice(o, other),
+                      other.unitPrice(o.price()),
                       "validity",
-                      validity(o, now())));
+                      o.validity(now())));
               (s(row, "validity").equals("현재 유효") ? ranked : excluded).add(row);
             }
-            ranked.sort(Comparator.comparing(o -> num(obj(o).get("unit_price"), false)));
+            ranked.sort(Comparator.comparing(o -> (BigDecimal) obj(o).get("unit_price")));
             return m(
                 "status",
                 ranked.isEmpty() ? "NO_DATA" : "OK",
@@ -82,23 +82,23 @@ public final class PriceService extends Service {
           if (!mode.equals("HISTORY")) throw new IllegalArgumentException("조회 모드를 확인하세요.");
           String start = day(request.get("start")), end = day(request.get("end"));
           if (start.compareTo(end) > 0) throw new IllegalArgumentException("조회 기간을 확인하세요.");
-          Map<String, Map<String, Object>> daily = new TreeMap<>();
+          Map<String, PriceObservation> daily = new TreeMap<>();
           for (var o : st.offers()) {
-            String d = s(o, "checked_date");
-            if (!historical(o)
-                || !s(o, "product_id").equals(s(p, "id"))
-                || !s(o, "store").equals(s(request, "store"))
-                || !s(o, "channel").equals(channel)
-                || !def(o, "condition", "일반").equals(condition)
-                || !def(o, "branch", "전체").equals(def(request, "branch", "전체"))
+            String d = o.checkedDate().toString();
+            if (!o.inPeriod(o.checkedDate())
+                || !o.productId().equals(p.id())
+                || !o.store().equals(s(request, "store"))
+                || !o.channel().equals(channel)
+                || !o.condition().equals(condition)
+                || !o.branch().equals(def(request, "branch", "전체"))
                 || d.compareTo(start) < 0
                 || d.compareTo(end) > 0) continue;
-            if (!daily.containsKey(d) || observationCompare(o, daily.get(d)) >= 0) daily.put(d, o);
+            if (!daily.containsKey(d) || o.compareTime(daily.get(d)) >= 0) daily.put(d, o);
           }
           List<Object> values = new ArrayList<>();
           BigDecimal min = null, max = null, sum = BigDecimal.ZERO;
           for (var e : daily.entrySet()) {
-            BigDecimal n = unitPrice(e.getValue(), p);
+            BigDecimal n = p.unitPrice(e.getValue().price());
             values.add(m("date", e.getKey(), "unit_price", n));
             sum = sum.add(n);
             min = min == null ? n : min.min(n);

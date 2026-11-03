@@ -52,9 +52,17 @@ public final class UiSmokeTests {
             frame = new LedgerFrame(repo, clock, false);
             JTabbedPane tabs = field(frame, "tabs");
             check(tabs.getTabCount() == 5, "five Swing use-case screens");
-            JTable history = field(frame, "historyTable");
+            check(
+                tabs.getComponentAt(0) instanceof LedgerTab
+                    && tabs.getComponentAt(1) instanceof BudgetTab
+                    && tabs.getComponentAt(2) instanceof ProductTab
+                    && tabs.getComponentAt(3) instanceof PriceTab
+                    && tabs.getComponentAt(4) instanceof TargetTab,
+                "each screen is owned by its own tab");
+            JTable history = field(frame.priceTab, "historyTable");
             check(history.getRowCount() == 9, "history renders nine observed dates");
-            JTextField amount = field(frame, "recordAmount"), memo = field(frame, "recordMemo");
+            JTextField amount = field(frame.ledgerTab, "recordAmount"),
+                memo = field(frame.ledgerTab, "recordMemo");
             amount.setText("3456");
             memo.setText("Swing EDT action test");
             button(frame, "내역 저장").doClick();
@@ -65,7 +73,7 @@ public final class UiSmokeTests {
                 new Repository(repo.path()).snapshot().records().size() == 6,
                 "saved Swing entry survives repository restart");
             tabs.setSelectedIndex(1);
-            JTextField qty = field(frame, "planQty");
+            JTextField qty = field(frame.budgetTab, "planQty");
             qty.setText("3");
             button(frame, "항목 적용").doClick();
             int original = list(repo.snapshot().map("plans").get("2026-11")).size();
@@ -76,16 +84,16 @@ public final class UiSmokeTests {
                 "plan save button commits draft");
             check(repo.snapshot().records().size() == 6, "plan save never creates an expense");
             tabs.setSelectedIndex(4);
-            JTable target = field(frame, "targetTable");
+            JTable target = field(frame.targetTab, "targetTable");
             check(target.getRowCount() == 3, "favorites populate purchase target screen");
             target.setRowSelectionInterval(0, 0);
-            JTextField goal = field(frame, "targetPrice");
+            JTextField goal = field(frame.targetTab, "targetPrice");
             goal.setText("250");
             button(frame, "목표 저장").doClick();
             decimalTarget(repo);
             check(!frame.isVisible(), "test does not claim a visible screenshot");
             goal.setText("251");
-            invoke(frame, "refreshTargets");
+            invoke(frame.targetTab, "refreshTargets");
             check(
                 target.getSelectedRow() >= 0 && goal.getText().equals("251"),
                 "background target refresh preserves selected row and unsaved input");
@@ -93,33 +101,34 @@ public final class UiSmokeTests {
             check(
                 s(obj(repo.snapshot().map("targets").get("milk")), "price").equals("251"),
                 "preserved target draft can still be saved");
-            JTextField budgetAmount = field(frame, "budgetAmount");
+            JTextField budgetAmount = field(frame.budgetTab, "budgetAmount");
             budgetAmount.setText("123456");
             check(
                 hasDraft(frame, 1),
                 "unsaved budget input participates in leave/close confirmation");
-            invoke(frame, "updatePlanEstimate");
+            invoke(frame.budgetTab, "updatePlanEstimate");
             check(
                 budgetAmount.getText().equals("123456"),
                 "price estimate refresh preserves unsaved budget input");
-            invoke(frame, "loadPlan");
+            invoke(frame.budgetTab, "loadPlan");
             qty.setText("7");
             check(
                 hasDraft(frame, 1),
                 "unapplied plan quantity participates in leave/close confirmation");
-            invoke(frame, "loadPlan");
+            invoke(frame.budgetTab, "loadPlan");
             check(!hasDraft(frame, 1), "cancel restores saved plan and clears unapplied edits");
             AppState state = repo.snapshot();
-            state.array("offers").removeIf(o -> s(obj(o), "product_id").equals("rice"));
-            repo.saveAtomic(state);
-            invoke(frame, "updatePlanEstimate");
-            JLabel summary = field(frame, "planSummary");
+            var json = state.toMap();
+            list(json.get("offers")).removeIf(o -> s(obj(o), "product_id").equals("rice"));
+            repo.saveAtomic(new AppState(json));
+            invoke(frame.budgetTab, "updatePlanEstimate");
+            JLabel summary = field(frame.budgetTab, "planSummary");
             check(
                 summary.getText().contains("확인된 소계")
                     && summary.getText().contains("미확정 1개")
                     && summary.getText().contains("미확정</b>원"),
                 "unknown-price plan displays confirmed subtotal and unknown total separately");
-            JTextArea productDetails = field(frame, "productDetails");
+            JTextArea productDetails = field(frame.productTab, "productDetails");
             check(
                 productDetails.getText().contains("시연식품")
                     && productDetails.getText().contains("1000ml")
@@ -127,7 +136,7 @@ public final class UiSmokeTests {
                     && productDetails.getText().contains("https://example.com/")
                     && productDetails.getText().contains("최근 성공"),
                 "product view exposes specification event dates URL and source status");
-            JTable comparison = field(frame, "compareTable");
+            JTable comparison = field(frame.priceTab, "compareTable");
             check(
                 comparison.getColumnName(1).equals("상품")
                     && comparison.getValueAt(0, 4).toString().contains("100ml"),
@@ -138,10 +147,10 @@ public final class UiSmokeTests {
             var notifications =
                 targetService.managePurchaseTargets(m("action", "EVALUATE", "product_id", "milk"));
             var method =
-                LedgerFrame.class.getDeclaredMethod("notificationText", java.util.List.class);
+                TargetTab.class.getDeclaredMethod("notificationText", java.util.List.class);
             method.setAccessible(true);
             String notification =
-                (String) method.invoke(frame, list(notifications.get("notifications")));
+                (String) method.invoke(frame.targetTab, list(notifications.get("notifications")));
             check(
                 notification.contains("데일리 우유")
                     && notification.contains("이마트")
@@ -152,13 +161,25 @@ public final class UiSmokeTests {
             int savedPlan = list(repo.snapshot().map("plans").get("2026-11")).size();
             button(frame, "장보기 추가").doClick();
             check(
-                list(field(frame, "planDraft")).size() == savedPlan + 1
+                list(field(frame.budgetTab, "planDraft")).size() == savedPlan + 1
                     && list(repo.snapshot().map("plans").get("2026-11")).size() == savedPlan,
                 "product-to-plan button only creates a draft");
             check(
                 repo.snapshot().records().size() == 6,
                 "product-to-plan navigation never creates a payment");
-            invoke(frame, "loadPlan");
+            invoke(frame.budgetTab, "loadPlan");
+            tabs.setSelectedIndex(2);
+            button(frame, "실제 구매 기록").doClick();
+            check(
+                tabs.getSelectedIndex() == 0
+                    && hasDraft(frame, 0)
+                    && repo.snapshot().records().size() == 6,
+                "selected product opens an unsaved ledger entry");
+            button(frame, "내역 저장").doClick();
+            check(
+                repo.snapshot().records().size() == 7 && !hasDraft(frame, 0),
+                "saving a cross-tab purchase records exactly one expense");
+
           } catch (Throwable e) {
             failure[0] = e;
           } finally {
@@ -184,10 +205,10 @@ public final class UiSmokeTests {
         "target save button persists chosen unit price");
   }
 
-  private static Object invoke(LedgerFrame frame, String name) throws Exception {
-    var method = LedgerFrame.class.getDeclaredMethod(name);
+  private static Object invoke(Object tab, String name) throws Exception {
+    var method = tab.getClass().getDeclaredMethod(name);
     method.setAccessible(true);
-    return method.invoke(frame);
+    return method.invoke(tab);
   }
 
   private static boolean hasDraft(LedgerFrame frame, int tab) throws Exception {
@@ -201,6 +222,7 @@ public final class UiSmokeTests {
     AppState demo = DemoData.create(clock);
     var offer =
         demo.offers().stream()
+            .map(PriceObservation::toMap)
             .filter(
                 o ->
                     s(o, "product_id").equals("milk")
@@ -214,7 +236,7 @@ public final class UiSmokeTests {
         Json.stringify(
             m(
                 "products",
-                java.util.List.of(demo.product("milk")),
+                java.util.List.of(demo.product("milk").toMap()),
                 "offers",
                 java.util.List.of(offer))));
     new ProductService(repo, new MartAdapter(), null, clock)
@@ -226,9 +248,9 @@ public final class UiSmokeTests {
           () -> {
             try {
               holder[0] = new LedgerFrame(repo, clock, false);
-              var m = LedgerFrame.class.getDeclaredMethod("refreshFeed", boolean.class);
+              var m = ProductTab.class.getDeclaredMethod("refreshFeed", boolean.class);
               m.setAccessible(true);
-              m.invoke(holder[0], false);
+              m.invoke(holder[0].productTab, false);
             } catch (Exception e) {
               problem[0] = e;
             }
@@ -240,7 +262,7 @@ public final class UiSmokeTests {
         SwingUtilities.invokeAndWait(
             () -> {
               try {
-                busy[0] = field(holder[0], "busy");
+                busy[0] = field(holder[0].productTab, "busy");
               } catch (Exception e) {
                 problem[0] = e;
               }
@@ -251,12 +273,12 @@ public final class UiSmokeTests {
       SwingUtilities.invokeAndWait(
           () -> {
             try {
-              JComboBox<?> plans = field(holder[0], "planProduct"),
-                  prices = field(holder[0], "priceProduct");
+              JComboBox<?> plans = field(holder[0].budgetTab, "planProduct"),
+                  prices = field(holder[0].priceTab, "priceProduct");
               check(
                   plans.getItemCount() == 1 && prices.getItemCount() == 1,
                   "new feed product immediately appears in plan and comparison selectors");
-              JTable table = field(holder[0], "compareTable");
+              JTable table = field(holder[0].priceTab, "compareTable");
               check(table.getRowCount() == 1, "new feed price is compared without restarting app");
             } catch (Throwable e) {
               problem[0] = e;

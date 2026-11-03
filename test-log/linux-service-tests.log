@@ -1,4 +1,4 @@
-Smart Grocery Ledger Java regression tests | 2026-11-02T17:34:48.894960270+09:00
+Smart Grocery Ledger Java regression tests | 2026-11-03T09:35:44.639588243+09:00
 OS=Linux amd64 Java=17.0.17 | business clock=2026-11-02T12:00+09:00
 PASS JSON unicode escape and decimal round trip
 PASS JSON malformed duplicate keys trailing tokens rejected
@@ -54,4 +54,6 @@ PASS CR02 malformed source state fails read without overwriting
 PASS CR02 invalid persisted plan store is rejected on load
 PASS UC01 CREATE cannot silently replace an existing record ID
 PASS UC03 past instant in a later local calendar day is accepted
-RESULT passed=54 failed=0 total=54
+PASS Repeating decimal unit prices retain precision when ranked and displayed
+PASS Legacy v1 ledger loads into typed objects and round trips after a save
+RESULT passed=56 failed=0 total=56

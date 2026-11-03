@@ -21,13 +21,15 @@
  *
  * <h2>Product and offer schema</h2>
  *
- * <p>A product contains id, category, name, brand, spec, size, unit and pack_count. Categories are
- * 우유, 계란, 라면, 쌀, 두부. Units are respectively ml, 개, 봉, g, g. An offer contains product_id, store,
- * branch, channel, price, condition, url, checked_date, checked_at, start and end. Optional
- * checked_at may be empty, which excludes the price from current comparisons. Store names are 이마트,
- * 홈플러스, 코스트코. The channel is 온라인 or 오프라인. Prices are product/package totals before unit conversion;
- * delivery charges are excluded. Manual entry and local JSON feeds are implemented; live retailer
- * web crawling is not.
+ * <p>Application state holds immutable {@link sgl.Product} and {@link sgl.PriceObservation}
+ * records. The five tabs own their controls and editing state. Version 1 JSON files, local feeds
+ * and map-based service requests use the following wire fields. A product contains id, category,
+ * name, brand, spec, size, unit and pack_count. Categories are 우유, 계란, 라면, 쌀, 두부. Units are
+ * respectively ml, 개, 봉, g, g. An offer contains product_id, store, branch, channel, price,
+ * condition, url, checked_date, checked_at, start and end. Optional checked_at may be empty, which
+ * excludes the price from current comparisons. Store names are 이마트, 홈플러스, 코스트코. The channel is 온라인
+ * or 오프라인. Prices are product/package totals before unit conversion; delivery charges are excluded.
+ * Manual entry and local JSON feeds are implemented; live retailer web crawling is not.
  *
  * <h2>Persistence and alerts</h2>
  *

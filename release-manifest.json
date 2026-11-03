@@ -1,11 +1,11 @@
 {
-  "version": "0.4.2-java-beta",
+  "version": "0.5.0-java-beta",
   "built_for_java": 17,
   "build_jdk": "Temurin 21.0.9",
-  "jar_sha256": "6481866cc2307e29e686dca3a6a31d02612ae05cb3010be4b37ae616eca49faf",
-  "recorded_at": "2026-11-02T17:40:40+09:00",
-  "service_tests": 54,
-  "swing_checks": 25,
+  "jar_sha256": "e8c85af5fe18fe4b55b483f26d271b20b7e0aad8a2e7f7bbc782ea0f1aa82703",
+  "recorded_at": "2026-11-03T09:36:30+09:00",
+  "service_tests": 56,
+  "swing_checks": 28,
   "verified_platforms": [
     "Windows 11 / Java 21.0.9 / GUI and services",
     "Windows 11 / Java 26 / executable JAR headless smoke",

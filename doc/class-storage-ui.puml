@@ -1,58 +1,45 @@
 @startuml
 !pragma layout smetana
-skinparam dpi 180
+skinparam dpi 170
 skinparam shadowing false
 skinparam classAttributeIconSize 0
 skinparam defaultFontName Arial
 skinparam defaultFontSize 15
 skinparam classBackgroundColor #FFFFFF
-skinparam classBorderColor #405862
-skinparam classHeaderBackgroundColor #EAF0F2
-skinparam ArrowColor #405862
-skinparam nodesep 45
-skinparam ranksep 45
+skinparam classBorderColor #41686A
+skinparam classHeaderBackgroundColor #E7F1EF
+skinparam ArrowColor #41686A
+hide empty members
 top to bottom direction
 class LedgerFrame {
-  - repo : Repository
+  ~ loadedMonth : String
+  ~ navigate(index : int)
+  ~ refreshAfterPriceChange()
+}
+abstract class TabView {
+  ~ frame : LedgerFrame
+  ~ hasDraft() : boolean
+  ~ discardDraft()
+}
+class LedgerTab {
   - ledger : LedgerService
+}
+class BudgetTab {
   - budget : BudgetService
+}
+class ProductTab {
   - products : ProductService
+}
+class PriceTab {
   - prices : PriceService
+}
+class TargetTab {
   - targets : TargetService
-  + LedgerFrame(repository : Repository, clock : Clock, autoRefresh : boolean)
-  + dispose() : void
 }
-class Repository {
-  - path : Path
-  - state : AppState
-  - readError : String
-  + loadState() : Map
-  + saveAtomic(candidate : AppState) : Map
-  + snapshot() : AppState
-  + readError() : String
-  + path() : Path
-  # replaceFile(temporary : Path, destination : Path) : void
-}
-class AppState {
-  - data : Map
-  + AppState()
-  + copy() : AppState
-  + toMap() : Map
-  ~ validate() : void
-}
-abstract class Service {
-  ~ repo : Repository
-  ~ clock : Clock
-}
-LedgerFrame "1" --> "1" Repository : repo
-LedgerFrame "1" --> "5" Service : five concrete services
-Service "5" --> "1" Repository : shared repo
-Repository "1" *-- "1" AppState : committed state
-legend bottom
-  Map = Map<String, Object>
-  AppState data: records, budgets, plans, products, offers, favorites,
-  targets, alerts, sources, feed_paths, auto_attempt, demo, version.
-  Service subclasses and adapter relationships: class-services diagram.
-  Main, Json, DemoData and Data utility classes omitted from this view.
-endlegend
+LedgerFrame "1" *-- "5" TabView : owns screens
+TabView <|-- LedgerTab
+TabView <|-- BudgetTab
+TabView <|-- ProductTab
+TabView <|-- PriceTab
+TabView <|-- TargetTab
 @enduml
