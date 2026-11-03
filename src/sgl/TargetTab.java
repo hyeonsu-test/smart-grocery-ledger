@@ -95,6 +95,7 @@ final class TargetTab extends TabView {
                 var row =
                     targetRows.get(
                         targetTable.convertRowIndexToModel(targetTable.getSelectedRow()));
+                if (targetDirty && s(row, "product_id").equals(editingTargetId)) return;
                 if (targetDirty
                     && !s(row, "product_id").equals(editingTargetId)
                     && !frame.discard("저장하지 않은 목표 설정을 버릴까요?")) {

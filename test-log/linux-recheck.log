@@ -1,0 +1,62 @@
+PASS 1 entire sale package: 계란 10구 x 2팩
+PASS 2 entire sale package: 계란 2 x 10구
+PASS 3 entire sale package: 라면 5봉 x 2팩
+PASS 4 entire sale package: 라면 2 x 5봉 x 3박스
+PASS 5 entire sale package: 종이컵 100개 x 2팩
+PASS 6 entire sale package: 커피컵 354ml x 80개 x 2박스
+PASS 7 entire sale package: 종이컵 2 x 100개
+PASS 8 entire sale package: 생수 2 x 500ml
+PASS 9 entire sale package: 생수 2 x 3 x 500ml x 4팩
+PASS 10 entire sale package: 생수 1,500ml
+PASS 11 entire sale package: 원두커피 1,000g x 2
+PASS 12 entire sale package: 대용량 식품 1,500,000g
+PASS 13 entire sale package: 우유 １，５００ｍｌ × ２
+PASS 14 entire sale package: 필터 50매 x 2팩
+PASS 15 entire sale package: 원두커피 1kg /최소구매 2
+PASS 16 entire sale package: 계란 10구 x 2팩 / 최소 구매 3
+PASS 17 entire sale package: 커피컵 354ml x 80개
+PASS 18 entire sale package: 카누 라떼 커피 13.5g x 50스틱 x 2박스
+PASS 19 ambiguous quantity requires confirmation: 계란 10구 + 10구
+PASS 20 ambiguous quantity requires confirmation: 라면 5봉 2팩
+PASS 21 ambiguous quantity requires confirmation: 커피컵 80개 + 사은품
+PASS 22 ambiguous quantity requires confirmation: 종이컵 100개 / 200개 선택
+PASS 23 ambiguous quantity requires confirmation: 생수 1,50ml
+PASS 24 ambiguous quantity requires confirmation: 식품 1,23,456g
+PASS 25 ambiguous quantity requires confirmation: 생수 500ml 6입
+PASS 26 ambiguous quantity requires confirmation: 생수 500ml x 2.5
+PASS 27 ambiguous quantity requires confirmation: 계란 10구 x 0
+PASS 28 ambiguous quantity requires confirmation: 계란 10구 2팩
+PASS 29 ambiguous quantity requires confirmation: 종이컵 100개 증정
+PASS 30 ambiguous quantity requires confirmation: 생수 2팩 x 500ml
+PASS 31 ambiguous quantity requires confirmation: 과자 200g + 100g
+PASS 32 bundle registration: 계란 10구 x 2팩
+PASS 33 bundle registration: 계란 2 x 10구
+PASS 34 bundle registration: 라면 5봉 x 2팩
+PASS 35 bundle registration: 라면 2 x 5봉 x 3박스
+PASS 36 bundle registration: 종이컵 100개 x 2팩
+PASS 37 ambiguous preview leaves quantity editable
+PASS 38 explicit confirmed total drives correct unit price
+PASS 39 old incorrectly counted package is rejected during recollection
+PASS 40 rejecting wrong old quantity preserves observed history and favorite
+PASS 41 correct package can be re-registered without rewriting old product history
+PASS 42 04 bundle unit price: 계란 10구 x 2팩
+PASS 43 05 bundle target matches actual unit price: 계란 10구 x 2팩
+PASS 44 04 bundle unit price: 계란 2 x 10구
+PASS 45 05 bundle target matches actual unit price: 계란 2 x 10구
+PASS 46 04 bundle unit price: 라면 5봉 x 2팩
+PASS 47 05 bundle target matches actual unit price: 라면 5봉 x 2팩
+PASS 48 04 bundle unit price: 라면 2 x 5봉 x 3박스
+PASS 49 05 bundle target matches actual unit price: 라면 2 x 5봉 x 3박스
+PASS 50 04 bundle unit price: 종이컵 100개 x 2팩
+PASS 51 05 bundle target matches actual unit price: 종이컵 100개 x 2팩
+PASS 52 ascending/descending name sort preserves unsaved goal and product
+PASS 53 numeric sort preserves all target draft fields
+PASS 54 collection refresh after sorting preserves draft
+PASS 55 sorted target save commits the original selected product
+PASS 56 sorted edit survives reload
+PASS 57 new target inherits most recent observation channel and condition
+PASS 58 04 defaults to most recent observed channel
+PASS 59 05 shows inherited offline channel
+PASS 60 offline personal target matches without changing channel manually
+PASS 61 explicitly saved channel is never replaced by an observation default
+Recheck tests: 61 passed, 0 failed

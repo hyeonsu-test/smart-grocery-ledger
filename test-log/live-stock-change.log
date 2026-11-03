@@ -1,0 +1,15 @@
+PASS official quantity 동원 웨이크업 뷰티 무라벨 2.0L
+PASS fresh registration 동원 웨이크업 뷰티 무라벨 2.0L
+PASS official quantity 농심 백산수 2L
+PASS fresh registration 농심 백산수 2L
+PASS official quantity 카누 라떼 커피 13.5g x 50스틱 x 2박스
+PASS fresh registration 카누 라떼 커피 13.5g x 50스틱 x 2박스
+PASS official quantity 스타벅스 카페 베로나 홀빈 커피 1.13kg
+PASS fresh registration 스타벅스 카페 베로나 홀빈 커피 1.13kg
+PASS official quantity 해태 홈런볼 초코 41G*4입
+PASS fresh registration 해태 홈런볼 초코 41G*4입
+PASS official quantity 프링글스 양파맛 110G
+Exception in thread "main" java.lang.IllegalArgumentException: 현재 품절 또는 판매 중지
+	at sgl.OfficialPageParser.parse(OfficialPageParser.java:90)
+	at sgl.ProductDiscovery.confirm(ProductDiscovery.java:161)
+	at sgl.LiveFlowProbe.main(LiveFlowProbe.java:28)

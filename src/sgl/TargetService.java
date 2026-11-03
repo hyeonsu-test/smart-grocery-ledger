@@ -128,7 +128,7 @@ public final class TargetService extends Service {
             String pid = id.toString();
             if (!st.array("favorites").contains(pid)) continue;
             PriceObservation current = st.latest().stream()
-                .filter(o -> o.productId().equals(pid)).findFirst().orElse(null);
+                .filter(o -> o.productId().equals(pid)).max(PriceObservation::compareTime).orElse(null);
             var target =
                 obj(
                     st.map("targets")
@@ -140,7 +140,7 @@ public final class TargetService extends Service {
                                 "enabled",
                                 false,
                                 "channel",
-                                "온라인",
+                                current == null ? "온라인" : current.channel(),
                                 "condition",
                                 current == null ? "일반" : current.condition())));
             var calc = basis(pid, def(target, "channel", "온라인"), def(target, "condition", "일반"));

@@ -1,9 +1,9 @@
 {
-  "version": "0.7.1-java-beta",
+  "version": "0.7.2-java-beta",
   "built_for_java": 17,
   "build_jdk": "Temurin 21.0.9",
-  "jar_sha256": "f48dec5981ab08a823acf1c402ed920b3427f8254909ecb7ba34010f7802f51a",
-  "recorded_at": "2026-11-03T17:50:57.407658+09:00",
+  "jar_sha256": "d1db1eb85d39f939774205cc9be2c70b2b60a5512d2cbbdf4aeee2d7ecc2a940",
+  "recorded_at": "2026-11-03T19:51:57.481315+09:00",
   "service_tests": 61,
   "swing_checks": 58,
   "verified_platforms": [
@@ -38,7 +38,7 @@
     ],
     "capture": "actual JTabbedPane, five selected states per scale",
     "regular_sha256": "53750379270312368cf7641901f43a98dd892e3d9d5798cf25cdc245c85c71c0",
-    "scales_verified_in_version": "0.5.2; same font and tab renderer in 0.7.1"
+    "scales_verified_in_version": "0.5.2; same font and tab renderer in 0.7.2"
   },
   "collection_tests": 32,
   "collection_swing_checks": 18,
@@ -52,7 +52,7 @@
       "failed": 1
     },
     "blocked": "이마트 HTTP 403",
-    "verified_in_version": "0.7.0; collector unchanged in 0.7.1"
+    "verified_in_version": "0.7.0 baseline only; package parser changed in 0.7.2 and tested with 61 regressions plus six fresh actual products"
   },
   "discovery_tests": 44,
   "discovery_swing_checks": 17,
@@ -71,7 +71,8 @@
       "생수",
       "커피",
       "과자"
-    ]
+    ],
+    "verified_in_version": "0.7.0 search baseline; 0.7.2 live coffee control returns 40 results, Homeplus snack replacement selected"
   },
   "product_flow_checks": 55,
   "live_product_flow": {
@@ -83,5 +84,12 @@
       "checks": 76,
       "products": 6
     }
+  },
+  "recheck_tests": 61,
+  "total_regression_checks_per_platform": 346,
+  "current_live_stock_change": {
+    "unavailable": "프링글스 양파맛 110G",
+    "replacement": "롯데 빼빼로 아몬드 132G",
+    "behavior": "Out-of-stock source rejected; isolated verification selected an available alternative"
   }
 }

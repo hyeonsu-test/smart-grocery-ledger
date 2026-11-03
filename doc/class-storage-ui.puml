@@ -43,6 +43,7 @@ class PriceTab {
 class TargetTab {
   - targets : TargetService
   - editingTargetId : String
+  - targetDirty : boolean
   - addFavorite()
 }
 LedgerFrame "1" *-- "5" TabView : owns screens

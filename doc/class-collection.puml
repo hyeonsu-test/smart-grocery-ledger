@@ -21,6 +21,7 @@ class ProductDiscovery {
   + search(store, keyword) : List<Hit>
   + inspect(url) : Preview
   + confirm(preview, category, total) : Result
+  - {static} packageTotal(...) : BigDecimal
 }
 class CollectionListService {
   + list() : List<CollectionSource>

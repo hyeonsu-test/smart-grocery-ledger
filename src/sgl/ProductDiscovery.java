@@ -164,11 +164,14 @@ public final class ProductDiscovery {
 
   static Quantity quantity(String original,Map<String,Object> detail) {
     String name=Normalizer.normalize(original,Normalizer.Form.NFKC).toLowerCase(Locale.ROOT);
+    name=name.replaceAll("(?<=\\d),(?=\\d{3}(?:\\D|$))","");
+    if(name.matches(".*\\d,\\d.*"))return null;
+    name=name.replaceAll("\\s*/\\s*최소\\s*구매\\s*[0-9]+\\s*$","");
     if(name.matches(".*(커피컵|종이컵|머그|그라인더|메이커|머신|텀블러|물병|보온병|커피필터).*")) {
       Matcher count=Pattern.compile("([0-9]+)\\s*(?:개입|개|매)(?![가-힣])").matcher(name);
       if(count.find()) {
-        BigDecimal total=new BigDecimal(count.group(1));
-        if(!count.find())return new Quantity(total,"개수 상품","용기의 용량 대신 판매 개수로 비교");
+        BigDecimal total=packageTotal(name,count.start(),count.end(),new BigDecimal(count.group(1)),true);
+        if(total!=null)return new Quantity(total,"개수 상품","용기의 용량 대신 판매 개수 × 묶음 수로 비교");
       }
       return null;
     }
@@ -176,9 +179,9 @@ public final class ProductDiscovery {
     boolean ramen=name.matches(".*(라면|신라면|짜파게티|너구리|불닭볶음면)(?:\\s|[0-9]|$).*");
     if(eggs || ramen) {
       Matcher count=Pattern.compile("([0-9]+)\\s*(?:개입|개|구|입|봉)(?![가-힣])").matcher(name);
-      if(count.find() && !name.contains("+")) {
-        BigDecimal total=new BigDecimal(count.group(1));
-        if(!count.find())return new Quantity(total,eggs?"계란":"라면","상품명에 표시된 판매 묶음 개수");
+      if(count.find()) {
+        BigDecimal total=packageTotal(name,count.start(),count.end(),new BigDecimal(count.group(1)),false);
+        return total==null?null:new Quantity(total,eggs?"계란":"라면","상품명에 표시된 개수 × 묶음 수");
       }
     }
     if(!detail.isEmpty()) {
@@ -191,31 +194,48 @@ public final class ProductDiscovery {
       }
     }
     // Reject mixed packs, gifts and alternative sizes instead of silently selecting one number.
-    name=name.replaceAll("\\s*/\\s*최소\\s*구매\\s*[0-9]+\\s*$","");
     if(name.contains("+") || name.contains("/") || name.contains("선택") || name.contains("증정"))return null;
-    Matcher q=Pattern.compile("([0-9]+(?:\\.[0-9]+)?)\\s*(kg|ml|g|l)(?![a-z])").matcher(name);
+    Matcher q=Pattern.compile("(?<![0-9.,])([0-9]+(?:\\.[0-9]+)?)\\s*(kg|ml|g|l)(?![a-z])").matcher(name);
     if(q.find()) {
       BigDecimal total=new BigDecimal(q.group(1));
-      String measure=q.group(2),tail=name.substring(q.end()).strip();
+      String measure=q.group(2);
+      int begin=q.start(),end=q.end();
       if(q.find())return null;
       if(measure.equals("kg") || measure.equals("l"))total=total.multiply(BigDecimal.valueOf(1000));
-      Matcher multiplier=Pattern.compile("^\\s*[*x×]\\s*([0-9]+)\\s*(?:개입|개|입|봉|팩|병|캔|스틱|박스|포|ct|p)?").matcher(tail);
-      while(multiplier.find()) {
-        total=total.multiply(new BigDecimal(multiplier.group(1)));
-        tail=tail.substring(multiplier.end()).strip();
-        multiplier=Pattern.compile("^\\s*[*x×]\\s*([0-9]+)\\s*(?:개입|개|입|봉|팩|병|캔|스틱|박스|포|ct|p)?").matcher(tail);
-      }
-      if(tail.matches(".*[0-9*x×].*"))return null;
+      total=packageTotal(name,begin,end,total,false);
+      if(total==null)return null;
       String category=measure.equals("ml") || measure.equals("l")?(name.contains("우유")?"우유":"음료"):"기타 식품";
       return new Quantity(total,category,"상품명에 표시된 용량 × 묶음 수");
     }
     Matcher count=Pattern.compile("([0-9]+)\\s*(?:개입|개|매|입)(?![가-힣])").matcher(name);
     if(count.find()) {
-      BigDecimal total=new BigDecimal(count.group(1));
-      if(!count.find() && !name.matches(".*[x×*].*"))
-        return new Quantity(total,"개수 상품","상품명에 표시된 총 개수");
+      BigDecimal total=packageTotal(name,count.start(),count.end(),new BigDecimal(count.group(1)),false);
+      if(total!=null)return new Quantity(total,"개수 상품","상품명에 표시된 개수 × 묶음 수");
     }
     return null;
+  }
+
+  /** Reads explicit multipliers on either side; ambiguous packs require user confirmation. */
+  private static BigDecimal packageTotal(String name,int begin,int end,BigDecimal amount,boolean container) {
+    if(name.contains("+") || name.contains("/") || name.contains("선택") || name.contains("증정"))return null;
+    String before=name.substring(0,begin),after=name.substring(end).strip();
+    if(container)before=before.replaceAll("[0-9]+(?:\\.[0-9]+)?\\s*(?:ml|l)\\s*[*x×]?\\s*","");
+    Matcher leading=Pattern.compile("(?<![0-9.,])((?:[0-9]+\\s*[*x×]\\s*)+)$").matcher(before);
+    if(leading.find()) {
+      Matcher factors=Pattern.compile("[0-9]+").matcher(leading.group(1));
+      while(factors.find())amount=amount.multiply(new BigDecimal(factors.group()));
+      before=before.substring(0,leading.start());
+    }
+    if(before.matches(".*(?:[0-9]\\s*[x×*]|[×*]).*") || before.strip().endsWith("x"))return null;
+    Pattern multiplier=Pattern.compile("^\\s*[*x×]\\s*([0-9]+)\\s*(?:개입|개|구|입|봉|팩|병|캔|스틱|박스|포|매|ct|p)?");
+    Matcher trailing=multiplier.matcher(after);
+    while(trailing.find()) {
+      amount=amount.multiply(new BigDecimal(trailing.group(1)));
+      after=after.substring(trailing.end()).strip();
+      trailing=multiplier.matcher(after);
+    }
+    if(after.matches(".*[0-9*x×].*") || amount.signum()<=0)return null;
+    return amount;
   }
 
   private static String attribute(String attrs,String name) {

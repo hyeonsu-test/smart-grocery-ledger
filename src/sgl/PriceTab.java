@@ -227,7 +227,7 @@ final class PriceTab extends TabView {
     priceCondition.setText("일반");
     frame.repo.snapshot().latest().stream()
         .filter(o -> o.productId().equals(chosen(priceProduct)))
-        .findFirst().ifPresent(o -> {
+        .max(PriceObservation::compareTime).ifPresent(o -> {
           priceChannel.setSelectedItem(o.channel());
           priceCondition.setText(o.condition());
           historyStore.setSelectedItem(o.store());

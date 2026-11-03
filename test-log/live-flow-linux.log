@@ -8,8 +8,8 @@ PASS official quantity 스타벅스 카페 베로나 홀빈 커피 1.13kg
 PASS fresh registration 스타벅스 카페 베로나 홀빈 커피 1.13kg
 PASS official quantity 해태 홈런볼 초코 41G*4입
 PASS fresh registration 해태 홈런볼 초코 41G*4입
-PASS official quantity 프링글스 양파맛 110G
-PASS fresh registration 프링글스 양파맛 110G
+PASS official quantity 롯데 빼빼로 아몬드 132G
+PASS fresh registration 롯데 빼빼로 아몬드 132G
 PASS all six non-default selections registered
 PASS 04 current comparison 동원 웨이크업 뷰티 무라벨 2.0L
 PASS 04 exact converted unit 29.500
@@ -46,10 +46,10 @@ PASS 05 editor selects new favorite 해태 홈런볼 초코 41G*4입
 PASS 05 actual retailer condition preserved
 PASS 05 no fabricated history; personal goal reached
 PASS 05 alert includes registered product
-PASS 04 current comparison 프링글스 양파맛 110G
-PASS 04 exact converted unit 3263.636363636363636363636363636364
+PASS 04 current comparison 롯데 빼빼로 아몬드 132G
+PASS 04 exact converted unit 4083.333333333333333333333333333333
 PASS 04 actual observation and correct retailer/branch
-PASS 05 editor selects new favorite 프링글스 양파맛 110G
+PASS 05 editor selects new favorite 롯데 빼빼로 아몬드 132G
 PASS 05 actual retailer condition preserved
 PASS 05 no fabricated history; personal goal reached
 PASS 05 alert includes registered product
@@ -58,7 +58,7 @@ REFRESH 2/6 · 홈플러스 · 농심 백산수 2L
 REFRESH 3/6 · 코스트코 · 카누 라떼 커피 13.5g x 50스틱 x 2박스
 REFRESH 4/6 · 코스트코 · 스타벅스 카페 베로나 홀빈 커피 1.13kg
 REFRESH 5/6 · 홈플러스 · 해태 홈런볼 초코 41G*4입
-REFRESH 6/6 · 홈플러스 · 프링글스 양파맛 110G
+REFRESH 6/6 · 홈플러스 · 롯데 빼빼로 아몬드 132G
 PASS six real prices recollected after targets saved
 PASS recurring collection does not duplicate today's alerts
 PASS six goals and favorites restored
@@ -77,7 +77,7 @@ PASS restarted alert guard 스타벅스 카페 베로나 홀빈 커피 1.13kg
 PASS restarted 04 keeps last observation per day 해태 홈런볼 초코 41G*4입
 PASS restarted 05 restores saved goal 해태 홈런볼 초코 41G*4입
 PASS restarted alert guard 해태 홈런볼 초코 41G*4입
-PASS restarted 04 keeps last observation per day 프링글스 양파맛 110G
-PASS restarted 05 restores saved goal 프링글스 양파맛 110G
-PASS restarted alert guard 프링글스 양파맛 110G
+PASS restarted 04 keeps last observation per day 롯데 빼빼로 아몬드 132G
+PASS restarted 05 restores saved goal 롯데 빼빼로 아몬드 132G
+PASS restarted alert guard 롯데 빼빼로 아몬드 132G
 LIVE product flow checks: 76 passed; 6 registered, compared, targeted, recollected and restarted
