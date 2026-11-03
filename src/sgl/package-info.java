@@ -19,6 +19,10 @@
  * changes stored observations. Errors are returned as INVALID_INPUT, READ_FAILED or SAVE_FAILED.
  * Drafts survive failed writes. Expected cancellations return CANCELLED.
  *
+ * <p>Ledger entries use store for the optional counterparty. Income uses a payer, dining uses
+ * a restaurant and other expenses use a merchant. Only an entry with product_id has a purchase
+ * quantity and must be classified as 지출/식료품. Monthly grocery budgets use 식료품 expenses.
+ *
  * <h2>Product and offer schema</h2>
  *
  * <p>Application state holds immutable {@link sgl.Product} and {@link sgl.PriceObservation}
@@ -30,6 +34,11 @@
  * excludes the price from current comparisons. Store names are 이마트, 홈플러스, 코스트코. The channel is 온라인
  * or 오프라인. Prices are product/package totals before unit conversion; delivery charges are excluded.
  * Manual entry and local JSON feeds are implemented; live retailer web crawling is not.
+ *
+ * <p>Product queries include catalog-only products with null price and unit_price when source
+ * filters are empty. promotions_only selects current eligible promotions. Manual and feed
+ * observations keep separate provenance even at the same time; a failed feed preserves
+ * independently confirmed manual observations.
  *
  * <h2>Persistence and alerts</h2>
  *

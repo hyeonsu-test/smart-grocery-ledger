@@ -20,6 +20,7 @@ import javax.swing.table.*;
 final class ProductTab extends TabView {
   private final ProductService products;
   private final JTextArea productDetails = details(5);
+  private final JLabel productStatus = new JLabel();
   private final JTable productTable =
       table("관심", "상품", "마트 / 지점", "경로 / 조건", "가격 (원)", "단위 가격", "확인 시각", "상태");
   private List<OfferRow> productRows = new ArrayList<>();
@@ -27,21 +28,25 @@ final class ProductTab extends TabView {
   private final JComboBox<String> filterCategory = all(CATEGORIES);
   private final JComboBox<String> filterStore = all(STORES);
   private final JComboBox<String> filterChannel = combo("전체", "온라인", "오프라인");
+  private final JCheckBox promotionsOnly = new JCheckBox("현재 행사만");
 
   ProductTab(LedgerFrame frame, ProductService products) {
     super(frame);
     this.products = products;
+    sortNumbers(productTable, 4, 5);
 
     add(productPage(), BorderLayout.CENTER);
   }
 
   private JPanel productPage() {
     JPanel root =
-        page("상품과 가격 정보", "우유 · 계란 · 라면 · 쌀 · 두부   /   직접 입력 또는 JSON 피드   /   마트 웹 자동 수집 미구현");
+        page("상품과 가격 정보", "우유 · 계란 · 라면 · 쌀 · 두부   /   직접 입력·JSON 파일 가져오기   /   웹 가격은 자동 갱신되지 않습니다.");
     JPanel filters = flow();
     filters.add(filterCategory);
     filters.add(filterStore);
     filters.add(filterChannel);
+    filters.add(promotionsOnly);
+    promotionsOnly.addActionListener(e -> refreshProducts());
     filters.add(frame.button("상품 조회", this::refreshProducts));
     filters.add(frame.button("가격 직접 입력", this::manualDialog));
     filters.add(frame.button("JSON 피드 연결", this::configureFeed));
@@ -92,7 +97,7 @@ final class ProductTab extends TabView {
             "출처 주소 복사",
             () -> {
               var row = selectedProduct();
-              if (row != null) {
+              if (row != null && requireSource(row)) {
                 Toolkit.getDefaultToolkit()
                     .getSystemClipboard()
                     .setContents(
@@ -103,6 +108,7 @@ final class ProductTab extends TabView {
     buttons.add(frame.button("실제 구매 기록", this::purchase));
     buttons.add(frame.button("장보기 추가", this::addProductToPlan));
     root.add(buttons);
+    root.add(productStatus);
     JTextArea note =
         new JTextArea(
             "가격은 배송비를 제외한 상품 금액입니다. 회원·쿠폰·행사 조건을 구분해 비교하세요.\n"
@@ -115,6 +121,9 @@ final class ProductTab extends TabView {
   }
 
   void refreshProducts() {
+    int previousIndex = productTable.getSelectedRow();
+    OfferRow previous = previousIndex < 0 ? null
+        : productRows.get(productTable.convertRowIndexToModel(previousIndex));
     var r =
         products.manageProducts(
             m(
@@ -125,7 +134,9 @@ final class ProductTab extends TabView {
                 "store",
                 filter(filterStore),
                 "channel",
-                filter(filterChannel)));
+                filter(filterChannel),
+                "promotions_only",
+                promotionsOnly.isSelected()));
     if (!frame.accepted(r)) return;
     productRows =
         rows(r.get("offers")).stream()
@@ -138,11 +149,11 @@ final class ProductTab extends TabView {
           productTable,
           row.favorite() ? "★" : "",
           row.product().name(),
-          offer.store() + " / " + offer.branch(),
-          offer.channel() + " / " + offer.condition(),
-          money(offer.price()),
-          money(row.unitPrice()) + " / " + unitLabel(row.product()),
-          offer.checkedAt() == null ? "" : offer.checkedAt().toString(),
+          offer == null ? "미확인" : offer.store() + " / " + offer.branch(),
+          offer == null ? "미확인" : offer.channel() + " / " + offer.condition(),
+          offer == null ? "미확인" : money(offer.price()),
+          row.unitPrice() == null ? "미확인" : money(row.unitPrice()) + " / " + unitLabel(row.product()),
+          offer == null || offer.checkedAt() == null ? "" : offer.checkedAt().toString(),
           row.validity());
     }
     StringJoiner states = new StringJoiner(" | ");
@@ -155,19 +166,33 @@ final class ProductTab extends TabView {
               + " / 최근 성공 "
               + (s(source, "last_success").isEmpty() ? "없음" : s(source, "last_success")));
     }
-    frame.status.setText(
+    productStatus.setText(
         states.length() > 0
-            ? "가격 정보 " + productRows.size() + "개 · 출처별 갱신 결과와 최근 성공 시각은 선택 상품 상세에서 확인"
-            : "가격 정보 " + productRows.size() + "개 · 직접 입력 / JSON 피드");
-    frame.status.setToolTipText(states.toString());
+            ? "조회 결과 " + productRows.size() + "건 · 출처별 갱신 결과와 최근 성공 시각은 선택 상품 상세에서 확인"
+            : "조회 결과 " + productRows.size() + "건 · 직접 입력 / JSON 피드");
+    productStatus.setToolTipText(states.toString());
     productDetails.setText(
         productRows.isEmpty()
             ? "조회 결과가 없습니다. 조건을 바꾸거나 가격을 직접 입력하세요."
             : "상품 행을 선택하면 규격·행사·출처를 확인할 수 있습니다.");
-    if (!productRows.isEmpty()) productTable.setRowSelectionInterval(0, 0);
+    if (!productRows.isEmpty()) {
+      int selected = 0;
+      for (int i = 0; previous != null && i < productRows.size(); i++) {
+        OfferRow row = productRows.get(i);
+        if (row.product().id().equals(previous.product().id())
+            && Objects.equals(row.offer() == null ? null : row.offer().key(),
+                previous.offer() == null ? null : previous.offer().key())) {
+          selected = i;
+          break;
+        }
+      }
+      int view = productTable.convertRowIndexToView(selected);
+      productTable.setRowSelectionInterval(view, view);
+    }
   }
 
   private String describeOffer(OfferRow row) {
+    if (row.offer() == null) return row.details();
     Object raw = frame.repo.snapshot().map("sources").get(row.offer().store());
     if (raw == null) return row.details() + "\n연결 피드 갱신 기록 없음 · 직접 확인 가격은 자체 확인 시각으로 판정합니다.";
     var source = obj(raw);
@@ -249,6 +274,7 @@ final class ProductTab extends TabView {
   }
 
   private void openSource(OfferRow row) {
+    if (!requireSource(row)) return;
     try {
       if (!Desktop.isDesktopSupported() || !Desktop.getDesktop().isSupported(Desktop.Action.BROWSE))
         throw new IllegalStateException("브라우저 실행을 지원하지 않습니다.");
@@ -258,6 +284,12 @@ final class ProductTab extends TabView {
           "링크를 열지 못했습니다",
           "다음 주소를 선택해 복사하거나 출처 주소 복사 버튼을 사용하세요.\n" + row.offer().url() + "\n" + e.getMessage());
     }
+  }
+
+  private boolean requireSource(OfferRow row) {
+    if (row.offer() != null) return true;
+    frame.status.setText("아직 등록된 가격 출처가 없습니다. 가격 직접 입력에서 확인한 출처를 등록하세요.");
+    return false;
   }
 
   private void manualDialog() {
@@ -284,7 +316,7 @@ final class ProductTab extends TabView {
     JComboBox<String> category = new JComboBox<>(CATEGORIES.toArray(String[]::new)),
         store = new JComboBox<>(STORES.toArray(String[]::new)),
         channel = combo("온라인", "오프라인");
-    panel.add(new JLabel("품목 (ml / 개 / 봉 / g 자동 적용)"));
+    panel.add(new JLabel("품목 (우유 ml / 계란 개 / 라면 봉 / 쌀·두부 g)"));
     panel.add(category);
     panel.add(new JLabel("마트"));
     panel.add(store);
@@ -306,14 +338,16 @@ final class ProductTab extends TabView {
     if (selected >= 0) {
       var row = productRows.get(productTable.convertRowIndexToModel(selected));
       category.setSelectedItem(row.product().category());
-      store.setSelectedItem(row.offer().store());
-      channel.setSelectedItem(row.offer().channel());
       var productFields = row.product().toMap();
-      var priceFields = row.offer().toMap();
       for (String k : List.of("id", "name", "brand", "spec", "size", "pack_count"))
         fields.get(k).setText(s(productFields, k));
-      for (String k : List.of("branch", "price", "condition", "url", "start", "end"))
-        fields.get(k).setText(s(priceFields, k));
+      if (row.offer() != null) {
+        store.setSelectedItem(row.offer().store());
+        channel.setSelectedItem(row.offer().channel());
+        var priceFields = row.offer().toMap();
+        for (String k : List.of("branch", "price", "condition", "url", "start", "end"))
+          fields.get(k).setText(s(priceFields, k));
+      }
     }
     JPanel actions = flow();
     actions.add(
@@ -357,6 +391,6 @@ final class ProductTab extends TabView {
 
   private void addProductToPlan() {
     var row = selectedProduct();
-    if (row != null) frame.budgetTab.addProduct(row.offer());
+    if (row != null) frame.budgetTab.addProduct(row.product(), row.offer());
   }
 }

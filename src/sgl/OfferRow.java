@@ -16,14 +16,14 @@ record OfferRow(
   static OfferRow read(Map<String, Object> result, Product p) {
     return new OfferRow(
         p,
-        PriceObservation.fromMap(result),
+        result.get("price") == null ? null : PriceObservation.fromMap(result),
         (BigDecimal) result.get("unit_price"),
         s(result, "validity"),
         yes(result, "favorite"));
   }
 
   String details() {
-    return product.name()
+    String specification = product.name()
         + " · "
         + product.brand()
         + " / "
@@ -33,8 +33,9 @@ record OfferRow(
         + product.unit()
         + " × "
         + product.packCount()
-        + "묶음\n"
-        + offer.store()
+        + "묶음\n";
+    if (offer == null) return specification + "가격 미확인 · 가격과 출처를 직접 입력하거나 피드를 갱신하세요.";
+    return specification + offer.store()
         + " / "
         + offer.branch()
         + " · "

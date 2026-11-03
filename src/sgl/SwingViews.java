@@ -117,6 +117,23 @@ final class SwingViews {
     ((DefaultTableModel) t.getModel()).addRow(values);
   }
 
+  static void sortNumbers(JTable table, int... columns) {
+    if (table.getRowSorter() instanceof TableRowSorter<?> sorter) {
+      for (int column : columns)
+        sorter.setComparator(column, Comparator.comparing(
+            SwingViews::displayNumber, Comparator.nullsLast(BigDecimal::compareTo)));
+    }
+  }
+
+  private static BigDecimal displayNumber(Object value) {
+    if (value == null) return null;
+    try {
+      return new BigDecimal(value.toString().split(" ")[0].replace(",", ""));
+    } catch (NumberFormatException e) {
+      return null;
+    }
+  }
+
   static JComboBox<String> combo(String... values) {
     JComboBox<String> box = new JComboBox<>(values);
     box.setPreferredSize(new Dimension(Math.max(105, box.getPreferredSize().width + 18), 30));

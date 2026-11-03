@@ -126,8 +126,13 @@ public record PriceObservation(
 
   boolean sameReading(PriceObservation other) {
     return key().equals(other.key())
+        && method.equals(other.method())
         && checkedDate.equals(other.checkedDate())
         && java.util.Objects.equals(checkedAt, other.checkedAt);
+  }
+
+  boolean isPromotion() {
+    return start != null || end != null || !condition.equals("일반");
   }
 
   boolean inPeriod(LocalDate date) {

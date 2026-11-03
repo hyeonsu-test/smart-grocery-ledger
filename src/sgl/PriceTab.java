@@ -35,8 +35,27 @@ final class PriceTab extends TabView {
   PriceTab(LedgerFrame frame, PriceService prices) {
     super(frame);
     this.prices = prices;
+    sortNumbers(compareTable, 0, 3, 4);
+    sortNumbers(historyTable, 1);
     priceProduct.setPreferredSize(new Dimension(220, 30));
     add(pricePage(), BorderLayout.CENTER);
+    for (JComboBox<?> filter : List.of(priceProduct, priceChannel)) {
+      filter.addActionListener(e -> {
+        if (!updating) {
+          clearComparison();
+          clearHistory();
+        }
+      });
+    }
+    priceCondition.getDocument().addDocumentListener(change(() -> {
+      if (!updating) {
+        clearComparison();
+        clearHistory();
+      }
+    }));
+    historyStore.addActionListener(e -> { if (!updating) clearHistory(); });
+    for (JTextField filter : List.of(historyBranch, historyStart, historyEnd))
+      filter.getDocument().addDocumentListener(change(() -> { if (!updating) clearHistory(); }));
   }
 
   private JPanel pricePage() {
@@ -55,11 +74,15 @@ final class PriceTab extends TabView {
         .getSelectionModel()
         .addListSelectionListener(
             e -> {
-              if (!e.getValueIsAdjusting() && compareTable.getSelectedRow() >= 0)
-                compareDetails.setText(
-                    compareRows
-                        .get(compareTable.convertRowIndexToModel(compareTable.getSelectedRow()))
-                        .details());
+              if (!e.getValueIsAdjusting() && !updating && compareTable.getSelectedRow() >= 0) {
+                OfferRow row = compareRows.get(compareTable.convertRowIndexToModel(compareTable.getSelectedRow()));
+                compareDetails.setText(row.details());
+                updating = true;
+                historyStore.setSelectedItem(row.offer().store());
+                historyBranch.setText(row.offer().branch());
+                updating = false;
+                refreshHistory();
+              }
             });
     root.add(new JScrollPane(compareDetails));
     JPanel history = flow();
@@ -84,7 +107,7 @@ final class PriceTab extends TabView {
 
   void refreshCompare() {
     if (priceProduct.getItemCount() == 0) {
-      clear(compareTable);
+      clearComparison();
       return;
     }
     var r =
@@ -99,6 +122,10 @@ final class PriceTab extends TabView {
                 "condition",
                 priceCondition.getText()));
     if (!frame.accepted(r)) return;
+    int previousIndex = compareTable.getSelectedRow();
+    PriceObservation.Key previous = previousIndex < 0 ? null
+        : compareRows.get(compareTable.convertRowIndexToModel(previousIndex)).offer().key();
+    updating = true;
     compareRows = new ArrayList<>();
     clear(compareTable);
     AppState state = frame.repo.snapshot();
@@ -118,12 +145,20 @@ final class PriceTab extends TabView {
       }
     }
     compareDetails.setText(compareRows.isEmpty() ? "비교 가능한 가격이 없습니다. 상품과 판매 경로·조건을 확인하세요." : "");
-    if (!compareRows.isEmpty()) compareTable.setRowSelectionInterval(0, 0);
+    if (!compareRows.isEmpty()) {
+      int selected = 0;
+      for (int i = 0; i < compareRows.size(); i++)
+        if (compareRows.get(i).offer().key().equals(previous)) selected = i;
+      int view = compareTable.convertRowIndexToView(selected);
+      compareTable.setRowSelectionInterval(view, view);
+      compareDetails.setText(compareRows.get(selected).details());
+    }
+    updating = false;
   }
 
   void refreshHistory() {
     if (priceProduct.getItemCount() == 0) {
-      clear(historyTable);
+      clearHistory();
       return;
     }
     var r =
@@ -150,7 +185,8 @@ final class PriceTab extends TabView {
     for (var row : rows(r.get("rows")))
       addRow(historyTable, s(row, "date"), money(row.get("unit_price")));
     priceSummary.setText(
-        "관측 "
+        frame.repo.snapshot().product(chosen(priceProduct)).name() + " · " + selected(historyStore)
+            + " / " + historyBranch.getText() + " · 관측 "
             + r.get("count")
             + "일 · 최저 "
             + money(r.get("min"))
@@ -164,8 +200,22 @@ final class PriceTab extends TabView {
   }
 
   void setProducts(AppState state) {
+    updating = true;
     fillChoices(priceProduct, state.products());
     if (state.demo() && historyBranch.getText().equals("전체")) historyBranch.setText("시연 지점");
+    updating = false;
+  }
+
+  private void clearComparison() {
+    clear(compareTable);
+    compareRows.clear();
+    compareDetails.setText("상품과 판매 조건을 선택한 뒤 단위 가격 비교를 누르세요.");
+  }
+
+  private void clearHistory() {
+    clear(historyTable);
+    chart.setRows(List.of());
+    priceSummary.setText("선택한 상품·마트·지점·기간으로 가격 이력을 조회하세요.");
   }
 
   private static final class HistoryChart extends JPanel {

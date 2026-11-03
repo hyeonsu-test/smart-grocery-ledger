@@ -1,0 +1,63 @@
+Version: 0.5.3-java-beta
+JAR SHA-256: b33e6fb85c0d55e408340ac060c6427216be1707a847a374aa829c307991bc66
+PASS tabs, tables, headers, controls and text inputs share the smoothed UI font
+PASS actual tab header uses bundled Korean typeface and bundled bold face is available
+PASS five Swing use-case screens
+PASS each screen is owned by its own tab
+PASS history renders nine observed dates
+PASS ledger save button persists actual payment
+PASS saved Swing entry survives repository restart
+PASS plan edit remains an unsaved draft
+PASS plan save button commits draft
+PASS plan save never creates an expense
+PASS favorites populate purchase target screen
+PASS target save button persists chosen unit price
+PASS test does not claim a visible screenshot
+PASS background target refresh preserves selected row and unsaved input
+PASS preserved target draft can still be saved
+PASS unsaved budget input participates in leave/close confirmation
+PASS price estimate refresh preserves unsaved budget input
+PASS unapplied plan quantity participates in leave/close confirmation
+PASS cancel restores saved plan and clears unapplied edits
+PASS unknown-price plan displays confirmed subtotal and unknown total separately
+PASS product view exposes specification event dates URL and source status
+PASS comparison identifies product and price unit
+PASS notification contains product store unit price and source URL
+PASS product-to-plan button only creates a draft
+PASS product-to-plan navigation never creates a payment
+PASS selected product opens an unsaved ledger entry
+PASS saving a cross-tab purchase records exactly one expense
+PASS asynchronous connected feed refresh completes
+PASS new feed product immediately appears in plan and comparison selectors
+PASS new feed price is compared without restarting app
+PASS general ledger uses counterparty and hides product-only quantity
+PASS product source count stays within product tab instead of ledger footer
+PASS dining shows a restaurant field without product quantity
+PASS dining saves restaurant independently of grocery spending
+PASS income only offers income categories and payer field
+PASS hidden purchase quantity cannot block ordinary income
+PASS linked product shows package quantity and locks food-expense classification
+PASS detaching a product and choosing dining clears inherited retailer
+PASS expired displayed price is never prefilled as actual payment
+PASS new entry date belongs to selected ledger month
+PASS declining ledger selection change preserves draft without another confirmation
+PASS declining plan selection change preserves quantity without repeated confirmation
+PASS applying a plan item clears editing identity and retailer defaults for the next item
+WARNING: row index is bigger than sorter's row count. Most likely this is a wrong sorter usage.
+PASS changing selected product clears both earlier prices and earlier history
+PASS fresh comparison uses newly selected product
+PASS selected store price and displayed history use the same branch
+PASS price refresh preserves selected offer and independently selected history branch
+PASS editing price conditions removes previous-condition results
+PASS target editor names selected product and comparison unit
+PASS empty favorites clear and disable target editor
+PASS catalog-only product is visible
+PASS catalog-only detail contains no fictional store, URL or zero price
+PASS missing source gives inline explanation without opening a browser
+PASS unpriced product can enter a shopping draft with unknown estimate
+PASS unpriced purchase asks for actual payment without inventing a retailer
+PASS current-promotions switch displays only eligible promotions
+PASS full catalog remains available after promotion filter
+PASS formatted amounts sort numerically across all ledger rows
+RESULT Swing action checks passed=58 failed=0
+OS=Linux Java=17.0.17

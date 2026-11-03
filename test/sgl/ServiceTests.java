@@ -278,10 +278,13 @@ public final class ServiceTests {
           status(f.ledger.manageLedger(m("action", "SEARCH", "month", "2026-2")), "INVALID_INPUT");
         });
     test(
-        "UC01 actual purchase forces food expense",
+        "UC01 incompatible linked purchase rejected; explicit food expense accepted",
         f -> {
           var r = payment();
           r.putAll(m("product_id", "milk", "kind", "수입", "category", "기타", "quantity", 2));
+          status(f.ledger.manageLedger(r), "INVALID_INPUT");
+          eq(f.repo.snapshot().records().size(), 5);
+          r.putAll(m("kind", "지출", "category", "식료품"));
           status(f.ledger.manageLedger(r), "OK");
           var row = f.repo.snapshot().records().get(5);
           eq(s(row, "kind"), "지출");
@@ -983,6 +986,76 @@ public final class ServiceTests {
           eq(reloaded.records(), state.records());
           eq(reloaded.map("budgets"), state.map("budgets"));
         });
+    test("Dining keeps restaurant and never becomes grocery spending", f -> {
+      var req = payment();
+      req.putAll(m("category", "외식", "store", "동네식당", "quantity", ""));
+      status(f.ledger.manageLedger(req), "OK");
+      var row = new Repository(f.file).snapshot().records().get(5);
+      eq(s(row, "category"), "외식");
+      eq(s(row, "store"), "동네식당");
+      eq(s(row, "product_id"), "");
+      decimal(monthly(f.repo.snapshot(), "2026-11").get("food"), "38100");
+    });
+    test("Income has a payer and rejects expense-only categories", f -> {
+      var req = payment();
+      req.putAll(m("kind", "수입", "category", "외식", "store", "아르바이트 급여"));
+      status(f.ledger.manageLedger(req), "INVALID_INPUT");
+      req.put("category", "급여");
+      status(f.ledger.manageLedger(req), "OK");
+      eq(s(f.repo.snapshot().records().get(5), "store"), "아르바이트 급여");
+    });
+    test("Identical manual and feed observations retain independent provenance on failure", f -> {
+      var offer = f.current("milk");
+      status(f.manual(offer), "OK");
+      Path file = f.directory.resolve("feed.json");
+      Files.writeString(file, Json.stringify(m("products",
+          List.of(f.repo.snapshot().product("milk").toMap()), "offers", List.of(offer))));
+      f.products.manageProducts(m("action", "CONFIGURE_FEED", "store", "이마트", "path", file.toString()));
+      status(f.products.manageProducts(m("action", "REFRESH", "store", "이마트")), "OK");
+      long count = f.repo.snapshot().offers().size();
+      f.products.manageProducts(m("action", "REFRESH", "store", "이마트"));
+      eq((long)f.repo.snapshot().offers().size(), count);
+      Files.writeString(file, "{broken");
+      status(f.products.manageProducts(m("action", "REFRESH", "store", "이마트")), "REFRESH_FAILED");
+      var ranked = rows(f.price.analyzePrices(m("mode", "COMPARE", "product_id", "milk")).get("ranked"));
+      check(ranked.stream().anyMatch(o -> s(o, "store").equals("이마트") && s(o, "method").equals("직접 입력")));
+      check(new Repository(f.file).snapshot().offers().stream().anyMatch(o ->
+          o.productId().equals("milk") && o.method().equals("직접 입력") && !o.failed()));
+    });
+    test("Catalog-only products are displayed and can be planned without a fictional price", f -> {
+      var product = f.repo.snapshot().product("milk").toMap();
+      product.putAll(m("id", "unknown-milk", "name", "가격 없는 우유"));
+      Path file = f.directory.resolve("catalog.json");
+      Files.writeString(file, Json.stringify(m("products", List.of(product), "offers", List.of())));
+      f.products.manageProducts(m("action", "CONFIGURE_FEED", "store", "이마트", "path", file.toString()));
+      status(f.products.manageProducts(m("action", "REFRESH")), "OK");
+      var missing = rows(f.products.manageProducts(m("action", "QUERY")).get("offers")).stream()
+          .filter(o -> s(o, "product_id").equals("unknown-milk")).findFirst().orElseThrow();
+      eq(s(missing, "validity"), "가격 미확인");
+      check(missing.get("price") == null);
+      check(OfferRow.read(missing, f.repo.snapshot().product("unknown-milk")).offer() == null);
+      var plan = f.budget.manageBudgetPlan(m("action", "UPSERT_ITEM", "month", "2026-11",
+          "draftPlan", List.of(), "product_id", "unknown-milk", "quantity", 2));
+      status(plan, "OK");
+      eq(plan.get("unknownCount"), 1);
+      check(plan.get("totalEstimate") == null);
+    });
+    test("Current promotions exclude ordinary, ended, future and failed offers", f -> {
+      var offer = f.current("milk");
+      offer.putAll(m("start", "2026-11-01", "end", "2026-11-03", "condition", "회원"));
+      status(f.manual(offer), "OK");
+      var ended = copyMap(offer);
+      ended.putAll(m("condition", "종료 행사", "end", "2026-11-01"));
+      status(f.manual(ended), "OK");
+      var future = copyMap(offer);
+      future.putAll(m("condition", "예정 행사", "start", "2026-11-03", "end", "2026-11-05"));
+      status(f.manual(future), "OK");
+      var current = rows(f.products.manageProducts(m("action", "QUERY", "promotions_only", true)).get("offers"));
+      eq(current.size(), 1);
+      eq(s(current.get(0), "condition"), "회원");
+      check(rows(f.products.manageProducts(m("action", "QUERY")).get("offers")).stream()
+          .anyMatch(o -> s(o, "validity").equals("만료")));
+    });
     System.out.println(
         "RESULT passed=" + passed + " failed=" + failed + " total=" + (passed + failed));
     if (failed > 0) System.exit(1);

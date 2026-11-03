@@ -1,2 +1,4 @@
+Version: 0.5.3-java-beta
+JAR SHA-256: b33e6fb85c0d55e408340ac060c6427216be1707a847a374aa829c307991bc66
 PASS executable JAR: 5 services, write/reload, embedded Javadoc
 OS=Windows 11 amd64 Java=26

@@ -9,6 +9,8 @@ import java.util.*;
 final class Data {
   static final List<String> STORES = List.of("이마트", "홈플러스", "코스트코");
   static final List<String> CATEGORIES = List.of("우유", "계란", "라면", "쌀", "두부");
+  static final List<String> INCOME_CATEGORIES = List.of("용돈", "급여", "기타");
+  static final List<String> EXPENSE_CATEGORIES = List.of("식료품", "외식", "교통", "주거", "기타");
   static final MathContext MC = MathContext.DECIMAL128;
 
   private Data() {}

@@ -36,6 +36,7 @@ final class BudgetTab extends TabView {
   BudgetTab(LedgerFrame frame, BudgetService budget) {
     super(frame);
     this.budget = budget;
+    sortNumbers(planTable, 1, 6);
     planProduct.setPreferredSize(new Dimension(220, 30));
     add(budgetPage(), BorderLayout.CENTER);
     budgetAmount
@@ -61,14 +62,14 @@ final class BudgetTab extends TabView {
   }
 
   private JPanel budgetPage() {
-    JPanel root = page("식비 예산과 장보기 계획", "장보기 계획은 실제 지출에 합산되지 않습니다. 수량·예산을 입력한 뒤 각각 저장하세요.");
+    JPanel root = page("식료품 예산과 장보기 계획", "식료품 지출을 기준으로 예산을 계산합니다. 장보기 계획과 외식 지출은 따로 관리합니다.");
     JPanel budgetBar = flow();
-    budgetBar.add(new JLabel("월 식비 예산: "));
+    budgetBar.add(new JLabel("월 식료품 예산 "));
     budgetBar.add(budgetAmount);
     budgetBar.add(new JLabel("원"));
     budgetBar.add(
         frame.button(
-            "월 식비 예산 저장",
+            "월 식료품 예산 저장",
             () -> {
               var r =
                   budget.manageBudgetPlan(
@@ -95,8 +96,12 @@ final class BudgetTab extends TabView {
         .addListSelectionListener(
             e -> {
               if (!e.getValueIsAdjusting() && !updating && planTable.getSelectedRow() >= 0) {
+                String selectedId = s(obj(planDraft.get(planTable.convertRowIndexToModel(planTable.getSelectedRow()))), "itemId");
+                if (planFormDirty && selectedId.equals(planItemId)) return;
                 if (planFormDirty && !frame.discard("아직 적용하지 않은 항목 입력을 버릴까요?")) {
+                  updating = true;
                   restoreSelection(planTable, rows(planDraft), "itemId", planItemId);
+                  updating = false;
                   return;
                 }
                 var item =
@@ -154,13 +159,14 @@ final class BudgetTab extends TabView {
               if (frame.accepted(r)) {
                 showPlan(r);
                 planDirty = true;
-                planFormDirty = false;
-                planItemId = "";
-                planTable.clearSelection();
+                clearPlanForm();
               }
             }));
     root.add(form);
     JPanel buttons = flow();
+    buttons.add(frame.button("새 항목", () -> {
+      if (!planFormDirty || frame.discard("아직 적용하지 않은 항목 입력을 취소할까요?")) clearPlanForm();
+    }));
     buttons.add(
         frame.button(
             "선택 항목 삭제",
@@ -185,7 +191,7 @@ final class BudgetTab extends TabView {
               if (frame.accepted(r)) {
                 showPlan(r);
                 planDirty = true;
-                planItemId = "";
+                clearPlanForm();
               }
             }));
     buttons.add(
@@ -224,14 +230,9 @@ final class BudgetTab extends TabView {
       updating = true;
       Object amount = obj(r.get("summary")).get("budget");
       budgetAmount.setText(amount == null ? "" : amount.toString());
-      planQty.setText("1");
-      planStore.setSelectedItem("전체");
-      planChannel.setSelectedItem("온라인");
-      planCondition.setText("일반");
-      planBranch.setText("");
       updating = false;
       budgetDirty = false;
-      planFormDirty = false;
+      clearPlanForm();
     }
   }
 
@@ -264,7 +265,7 @@ final class BudgetTab extends TabView {
             + frame.loadedMonth
             + " 예산 <b>"
             + (a.get("budget") == null ? "미설정" : money(a.get("budget")) + "원")
-            + "</b> · 식비 잔여 <b>"
+            + "</b> · 식료품 예산 잔여 <b>"
             + money(a.get("remaining"))
             + "</b>원<br>확인된 소계 <b>"
             + money(r.get("validSubtotal"))
@@ -279,7 +280,8 @@ final class BudgetTab extends TabView {
             + "</b>원</html>");
   }
 
-  void addProduct(PriceObservation offer) {
+  void addProduct(Product product, PriceObservation offer) {
+    if (planFormDirty && !frame.discard("아직 적용하지 않은 항목 입력을 취소하고 선택 상품을 추가할까요?")) return;
     var r =
         budget.manageBudgetPlan(
             m(
@@ -290,23 +292,38 @@ final class BudgetTab extends TabView {
                 "draftPlan",
                 planDraft,
                 "product_id",
-                offer.productId(),
+                product.id(),
                 "quantity",
                 1,
                 "store",
-                offer.store(),
+                offer == null ? "" : offer.store(),
                 "branch",
-                offer.branch(),
+                offer == null ? "" : offer.branch(),
                 "channel",
-                offer.channel(),
+                offer == null ? "온라인" : offer.channel(),
                 "condition",
-                offer.condition()));
+                offer == null ? "일반" : offer.condition()));
     if (frame.accepted(r)) {
+      planItemId = "";
       showPlan(r);
       planDirty = true;
+      clearPlanForm();
       frame.navigate(1);
       frame.status.setText("선택 상품을 장보기 초안에 추가했습니다. 계획 저장 전에는 파일을 변경하지 않습니다.");
     }
+  }
+
+  private void clearPlanForm() {
+    updating = true;
+    planItemId = "";
+    planTable.clearSelection();
+    planQty.setText("1");
+    planStore.setSelectedItem("전체");
+    planChannel.setSelectedItem("온라인");
+    planCondition.setText("일반");
+    planBranch.setText("");
+    updating = false;
+    planFormDirty = false;
   }
 
   void setProducts(Collection<Product> products) {

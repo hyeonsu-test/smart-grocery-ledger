@@ -20,7 +20,7 @@ final class LedgerTab extends TabView {
   private final LedgerService ledger;
   private final JTextField month = new JTextField(YearMonth.now().toString(), 8);
   private final JLabel totals = new JLabel();
-  private final JTable recordTable = table("날짜", "구분", "분류", "금액 (원)", "메모", "마트");
+  private final JTable recordTable = table("날짜", "구분", "분류", "금액 (원)", "메모", "거래처");
   private List<Map<String, Object>> recordRows = new ArrayList<>();
   private boolean recordDirty = false;
   private String recordId = "";
@@ -32,7 +32,12 @@ final class LedgerTab extends TabView {
   private final JTextField recordQuantity = new JTextField("1", 4);
   private final JComboBox<String> kind = new JComboBox<>(new String[] {"지출", "수입"});
   private final JComboBox<String> recordCategory =
-      new JComboBox<>(new String[] {"식료품", "외식", "교통", "주거", "용돈", "급여", "기타"});
+      new JComboBox<>(EXPENSE_CATEGORIES.toArray(String[]::new));
+  private final JLabel storeLabel = new JLabel();
+  private final JLabel amountLabel = new JLabel();
+  private final JLabel purchaseInfo = new JLabel();
+  private final JPanel quantityField = field("구매 수량 (상품 묶음 수)", recordQuantity);
+  private JButton detachPurchase;
   private final JTextField search = new JTextField(16);
   private final JComboBox<String> searchCategory =
       combo("전체", "식료품", "외식", "교통", "주거", "용돈", "급여", "기타");
@@ -40,6 +45,7 @@ final class LedgerTab extends TabView {
   LedgerTab(LedgerFrame frame, LedgerService ledger) {
     super(frame);
     this.ledger = ledger;
+    sortNumbers(recordTable, 3);
     month.setText(frame.loadedMonth);
     add(ledgerPage(), BorderLayout.CENTER);
     for (JTextField field :
@@ -53,11 +59,20 @@ final class LedgerTab extends TabView {
                   }));
     kind.addActionListener(
         e -> {
-          if (!updating) recordDirty = true;
+          if (!updating) {
+            updateCategories("");
+            recordStore.setText("");
+            updateEntryFields();
+            recordDirty = true;
+          }
         });
     recordCategory.addActionListener(
         e -> {
-          if (!updating) recordDirty = true;
+          if (!updating) {
+            recordStore.setText("");
+            updateEntryFields();
+            recordDirty = true;
+          }
         });
   }
 
@@ -78,8 +93,11 @@ final class LedgerTab extends TabView {
             e -> {
               if (!e.getValueIsAdjusting() && !updating && recordTable.getSelectedRow() >= 0) {
                 int index = recordTable.convertRowIndexToModel(recordTable.getSelectedRow());
+                if (recordDirty && s(recordRows.get(index), "id").equals(recordId)) return;
                 if (recordDirty && !frame.discard("입력 중인 내용을 버리고 선택 내역을 불러올까요?")) {
+                  updating = true;
                   restoreSelection(recordTable, recordRows, "id", recordId);
+                  updating = false;
                   return;
                 }
                 loadRecord(recordRows.get(index));
@@ -90,11 +108,25 @@ final class LedgerTab extends TabView {
     form.add(field("날짜 YYYY-MM-DD", recordDate));
     form.add(field("구분", kind));
     form.add(field("분류", recordCategory));
-    form.add(field("실제 결제 총액 (원)", recordAmount));
+    JPanel amountField = field("", recordAmount);
+    amountField.add(amountLabel, BorderLayout.NORTH);
+    form.add(amountField);
     form.add(field("메모", recordMemo));
-    form.add(field("마트", recordStore));
-    form.add(field("구매 수량", recordQuantity));
-    form.add(new JLabel("상품 구매는 식료품 지출로 저장"));
+    JPanel storeField = field("", recordStore);
+    storeField.add(storeLabel, BorderLayout.NORTH);
+    form.add(storeField);
+    form.add(quantityField);
+    JPanel purchaseControls = new JPanel(new BorderLayout(0, 4));
+    purchaseControls.setOpaque(false);
+    purchaseControls.add(purchaseInfo, BorderLayout.NORTH);
+    detachPurchase = frame.button("상품 연결 해제", () -> {
+      purchaseId = "";
+      recordQuantity.setText("1");
+      updateEntryFields();
+      recordDirty = true;
+    });
+    purchaseControls.add(detachPurchase);
+    form.add(purchaseControls);
     root.add(form);
     JPanel actions = flow();
     actions.add(frame.button("내역 저장", this::saveRecord));
@@ -164,7 +196,7 @@ final class LedgerTab extends TabView {
             + money(a.get("expense"))
             + "</b>원 &nbsp; 잔액 <b>"
             + money(a.get("balance"))
-            + "</b>원 &nbsp; 식비 <b>"
+            + "</b>원 &nbsp; 식료품 지출 <b>"
             + money(a.get("food"))
             + "</b>원<br>분류별 지출: "
             + html(categoryText(obj(a.get("categories"))))
@@ -181,13 +213,16 @@ final class LedgerTab extends TabView {
     updating = true;
     recordId = "";
     purchaseId = "";
-    recordDate.setText(LocalDate.now(frame.clock).toString());
+    LocalDate today = LocalDate.now(frame.clock);
+    YearMonth selectedMonth = YearMonth.parse(frame.loadedMonth);
+    recordDate.setText((selectedMonth.equals(YearMonth.from(today)) ? today : selectedMonth.atDay(1)).toString());
     recordAmount.setText("");
     recordMemo.setText("");
     recordStore.setText("");
     recordQuantity.setText("1");
     kind.setSelectedItem("지출");
-    recordCategory.setSelectedItem("식료품");
+    updateCategories("식료품");
+    updateEntryFields();
     recordTable.clearSelection();
     updating = false;
     recordDirty = false;
@@ -203,7 +238,8 @@ final class LedgerTab extends TabView {
     recordStore.setText(s(r, "store"));
     recordQuantity.setText(s(r, "quantity"));
     kind.setSelectedItem(s(r, "kind"));
-    recordCategory.setSelectedItem(s(r, "category"));
+    updateCategories(s(r, "category"));
+    updateEntryFields();
     updating = false;
     recordDirty = false;
   }
@@ -233,10 +269,11 @@ final class LedgerTab extends TabView {
                 "quantity",
                 recordQuantity.getText()));
     if (frame.accepted(r)) {
+      String savedMonth = recordDate.getText().substring(0, 7);
       clearRecord();
       refreshLedger();
       frame.budgetTab.updatePlanEstimate();
-      frame.status.setText("실제 결제 내역을 저장했습니다.");
+      frame.status.setText(savedMonth + " 내역을 저장했습니다. 현재 조회 월은 " + frame.loadedMonth + "입니다.");
     }
   }
 
@@ -259,11 +296,43 @@ final class LedgerTab extends TabView {
     clearRecord();
     purchaseId = p.id();
     recordMemo.setText(p.name());
-    recordStore.setText(o.store());
-    recordAmount.setText(o.price().toPlainString());
+    recordStore.setText(o == null ? "" : o.store());
+    recordAmount.setText(o == null || !o.validity(OffsetDateTime.now(frame.clock)).equals("현재 유효")
+        ? "" : o.price().toPlainString());
+    updateEntryFields();
     frame.navigate(0);
     recordDirty = true;
     frame.status.setText("실제 결제 총액과 수량을 확인한 뒤 내역 저장을 누르세요. 배송비는 직접 반영하세요.");
+  }
+
+  private void updateCategories(String preferred) {
+    boolean previous = updating;
+    updating = true;
+    recordCategory.removeAllItems();
+    List<String> categories = selected(kind).equals("수입") ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+    for (String category : categories) recordCategory.addItem(category);
+    // Preserve older custom categories when an existing entry is opened.
+    if (!preferred.isEmpty() && !categories.contains(preferred)) recordCategory.addItem(preferred);
+    if (!preferred.isEmpty()) recordCategory.setSelectedItem(preferred);
+    updating = previous;
+  }
+
+  private void updateEntryFields() {
+    boolean income = selected(kind).equals("수입");
+    storeLabel.setText(income ? "입금처 (선택)" : switch (selected(recordCategory)) {
+      case "식료품" -> "마트 / 구입처 (선택)";
+      case "외식" -> "식당 / 가게 (선택)";
+      default -> "사용처 (선택)";
+    });
+    amountLabel.setText(income ? "실제 수입 금액 (원)" : "실제 지출 총액 (원)");
+    boolean linked = !purchaseId.isEmpty();
+    kind.setEnabled(!linked);
+    recordCategory.setEnabled(!linked);
+    quantityField.setVisible(linked);
+    recordQuantity.setEnabled(linked);
+    detachPurchase.setVisible(linked);
+    purchaseInfo.setText(linked ? "상품 연결 · 식료품 지출" : "");
+    revalidate();
   }
 
   @Override

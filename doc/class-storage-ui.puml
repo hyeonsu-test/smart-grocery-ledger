@@ -23,15 +23,20 @@ abstract class TabView {
 }
 class LedgerTab {
   - ledger : LedgerService
+  - purchaseId : String
+  - updateEntryFields()
 }
 class BudgetTab {
   - budget : BudgetService
+  - planItemId : String
 }
 class ProductTab {
   - products : ProductService
+  - promotionsOnly : JCheckBox
 }
 class PriceTab {
   - prices : PriceService
+  - clearHistory()
 }
 class TargetTab {
   - targets : TargetService

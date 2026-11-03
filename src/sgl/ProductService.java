@@ -49,7 +49,9 @@ public final class ProductService extends Service {
   /**
    * Executes QUERY, UPSERT_MANUAL, SET_FAVORITE, CONFIGURE_FEED, REFRESH or AUTO_REFRESH.
    *
-   * <p>QUERY accepts category/store/channel filters. UPSERT_MANUAL requires product and offer
+   * <p>QUERY accepts category/store/channel filters and optional promotions_only.
+   * Without store/channel/promotion filters, products without observations are returned with
+   * null price/unit_price and validity "가격 미확인". UPSERT_MANUAL requires product and offer
    * objects documented in the package overview. SET_FAVORITE requires product_id and boolean
    * isFavorite. CONFIGURE_FEED requires store and local path (empty removes). REFRESH optionally
    * selects one store; otherwise only configured stores are attempted. AUTO_REFRESH attempts
@@ -72,6 +74,7 @@ public final class ProductService extends Service {
           List<String> successes = new ArrayList<>();
           if (action.equals("QUERY")) {
             List<Object> result = new ArrayList<>();
+            boolean promotionsOnly = yes(request, "promotions_only");
             for (var o : st.latest()) {
               var p = st.product(o.productId());
               if (!s(request, "category").isEmpty() && !s(request, "category").equals(p.category()))
@@ -79,6 +82,8 @@ public final class ProductService extends Service {
               if (!s(request, "store").isEmpty() && !s(request, "store").equals(o.store()))
                 continue;
               if (!s(request, "channel").isEmpty() && !s(request, "channel").equals(o.channel()))
+                continue;
+              if (promotionsOnly && (!o.isPromotion() || !o.validity(now()).equals("현재 유효")))
                 continue;
               var row = o.toMap();
               row.putAll(
@@ -92,6 +97,18 @@ public final class ProductService extends Service {
                       "favorite",
                       st.array("favorites").contains(p.id())));
               result.add(row);
+            }
+            if (!promotionsOnly && s(request, "store").isEmpty() && s(request, "channel").isEmpty()) {
+              Set<String> priced = new HashSet<>();
+              for (var o : st.offers()) priced.add(o.productId());
+              for (var p : st.products()) {
+                if (priced.contains(p.id())
+                    || !s(request, "category").isEmpty() && !s(request, "category").equals(p.category()))
+                  continue;
+                result.add(m("product_id", p.id(), "product", p.toMap(), "price", null,
+                    "unit_price", null, "validity", "가격 미확인",
+                    "favorite", st.array("favorites").contains(p.id())));
+              }
             }
             return ok("offers", result, "products", st.productJson(), "sources", st.map("sources"));
           }
@@ -139,6 +156,7 @@ public final class ProductService extends Service {
                     throw new IllegalArgumentException("중복 상품 ID");
                 }
                 AppState candidate = st.copy();
+                for (var p : feedProducts.values()) candidate.addProduct(Product.fromMap(p));
                 Set<String> ids = new LinkedHashSet<>();
                 int count = 0;
                 for (var raw : rows(feed.get("offers")))
@@ -152,7 +170,8 @@ public final class ProductService extends Service {
                             "JSON 피드");
                     if (pid != null) ids.add(pid);
                   }
-                if (count == 0) throw new IllegalArgumentException("선택 마트의 가격 정보가 없습니다.");
+                if (count == 0 && (feedProducts.isEmpty() || !rows(feed.get("offers")).isEmpty()))
+                  throw new IllegalArgumentException("선택 마트의 가격 정보가 없습니다.");
                 st = candidate;
                 changed.addAll(ids);
                 successes.add(store);

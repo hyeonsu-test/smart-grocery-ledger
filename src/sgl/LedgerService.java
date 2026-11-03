@@ -23,7 +23,8 @@ public final class LedgerService extends Service {
    * <p>CREATE/UPDATE require date, kind, category, positive integer amount; UPDATE/DELETE require
    * recordId; CREATE rejects a nonempty recordId. DELETE requires confirmed=true. SEARCH accepts
    * month (YYYY-MM), category and keyword. Optional purchase fields: product_id, store, quantity,
-   * memo. A linked purchase always becomes a food expense.
+   * memo. store is an optional counterparty for any entry. A linked purchase requires a food
+   * expense and a positive package quantity; unlinked entries have no purchase quantity.
    *
    * @param request action and fields described above
    * @return status, records and unfiltered monthly summary for SEARCH; affected months after a
@@ -72,9 +73,12 @@ public final class LedgerService extends Service {
             String pid = s(request, "product_id");
             if (!pid.isEmpty()) {
               st.product(pid);
-              kind = "지출";
-              category = "식료품";
+              if (!kind.equals("지출") || !category.equals("식료품"))
+                throw new IllegalArgumentException("상품 연결 내역은 식료품 지출입니다. 다른 분류는 상품 연결을 해제하세요.");
             }
+            if (kind.equals("수입") && EXPENSE_CATEGORIES.contains(category) && !category.equals("기타")
+                || kind.equals("지출") && INCOME_CATEGORIES.contains(category) && !category.equals("기타"))
+              throw new IllegalArgumentException("수입·지출 구분에 맞는 분류를 선택하세요.");
             Map<String, Object> row =
                 m(
                     "id",
@@ -94,7 +98,7 @@ public final class LedgerService extends Service {
                     "product_id",
                     pid,
                     "quantity",
-                    integer(request.getOrDefault("quantity", 1), false));
+                    pid.isEmpty() ? 1 : integer(request.getOrDefault("quantity", 1), false));
             if (old != null) {
               st.array("records").remove(old);
               affected.add(s(old, "date").substring(0, 7));

@@ -1,4 +1,6 @@
-﻿Smart Grocery Ledger Java regression tests | 2026-11-03T10:17:52.307481800+09:00
+Version: 0.5.3-java-beta
+JAR SHA-256: b33e6fb85c0d55e408340ac060c6427216be1707a847a374aa829c307991bc66
+Smart Grocery Ledger Java regression tests | 2026-11-03T14:32:41.039041100+09:00
 OS=Windows 11 amd64 Java=21.0.9 | business clock=2026-11-02T12:00+09:00
 PASS JSON unicode escape and decimal round trip
 PASS JSON malformed duplicate keys trailing tokens rejected
@@ -8,7 +10,7 @@ PASS UC01 cancelled and missing deletion never writes
 PASS UC01 confirmed deletion persists
 PASS UC01 invalid money and overflow rejected
 PASS UC01 invalid date and malformed month rejected
-PASS UC01 actual purchase forces food expense
+PASS UC01 incompatible linked purchase rejected; explicit food expense accepted
 PASS Repository atomic failure preserves disk memory and draft
 PASS Repository corrupt file is read-only and never overwritten
 PASS Repository nested corruption and version fail closed
@@ -56,4 +58,9 @@ PASS UC01 CREATE cannot silently replace an existing record ID
 PASS UC03 past instant in a later local calendar day is accepted
 PASS Repeating decimal unit prices retain precision when ranked and displayed
 PASS Legacy v1 ledger loads into typed objects and round trips after a save
-RESULT passed=56 failed=0 total=56
+PASS Dining keeps restaurant and never becomes grocery spending
+PASS Income has a payer and rejects expense-only categories
+PASS Identical manual and feed observations retain independent provenance on failure
+PASS Catalog-only products are displayed and can be planned without a fictional price
+PASS Current promotions exclude ordinary, ended, future and failed offers
+RESULT passed=61 failed=0 total=61

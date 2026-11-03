@@ -125,7 +125,12 @@ public final class AppState {
   List<PriceObservation> latest() {
     Map<PriceObservation.Key, PriceObservation> last = new LinkedHashMap<>();
     for (var o : observations)
-      last.merge(o.key(), o, (prev, next) -> next.compareTime(prev) >= 0 ? next : prev);
+      last.merge(o.key(), o, (prev, next) -> {
+        if (prev.failed() != next.failed()) return prev.failed() ? next : prev;
+        int order = next.compareTime(prev);
+        if (order == 0 && prev.method().equals("직접 입력")) return prev;
+        return order >= 0 ? next : prev;
+      });
     return List.copyOf(last.values());
   }
 

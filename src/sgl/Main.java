@@ -14,7 +14,7 @@ import javax.swing.*;
 /** Executable JAR entry point. Run with --demo for isolated fictional data. */
 public final class Main {
   /** Application version. */
-  public static final String VERSION = "0.5.2-java-beta";
+  public static final String VERSION = "0.5.3-java-beta";
 
   private static FileChannel lockChannel;
   private static FileLock processLock;

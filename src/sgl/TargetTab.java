@@ -29,10 +29,13 @@ final class TargetTab extends TabView {
   private final JTextField targetCondition = new JTextField("일반", 6);
   private final JComboBox<String> targetChannel = combo("온라인", "오프라인");
   private final JCheckBox targetEnabled = new JCheckBox("앱 안 알림 사용");
+  private final JLabel targetPriceLabel = new JLabel("선택 상품의 단위 목표가");
+  private JButton saveButton;
 
   TargetTab(LedgerFrame frame, TargetService targets) {
     super(frame);
     this.targets = targets;
+    sortNumbers(targetTable, 1, 2, 3, 4);
 
     add(targetPage(), BorderLayout.CENTER);
     for (JTextField field : List.of(targetPrice, targetCondition))
@@ -94,12 +97,13 @@ final class TargetTab extends TabView {
               }
             });
     JPanel form = flow();
-    form.add(new JLabel("선택 상품의 단위 목표가"));
+    form.add(targetPriceLabel);
     form.add(targetPrice);
     form.add(targetChannel);
     form.add(targetCondition);
     form.add(targetEnabled);
-    form.add(frame.button("목표 저장", this::saveTarget));
+    saveButton = frame.button("목표 저장", this::saveTarget);
+    form.add(saveButton);
     root.add(form);
     JPanel actions = flow();
     actions.add(frame.button("목표 조회", this::refreshTargets));
@@ -131,6 +135,10 @@ final class TargetTab extends TabView {
             m("action", "VIEW", "product_ids", frame.repo.snapshot().array("favorites")));
     if (!frame.accepted(r)) return;
     targetRows = rows(r.get("items"));
+    if (targetRows.stream().noneMatch(row -> s(row, "product_id").equals(editingTargetId))) {
+      editingTargetId = "";
+      targetDirty = false;
+    }
     updating = true;
     clear(targetTable);
     for (var row : targetRows) {
@@ -155,9 +163,18 @@ final class TargetTab extends TabView {
       else if (!targetRows.isEmpty()) targetTable.setRowSelectionInterval(0, 0);
       else {
         editingTargetId = "";
+        updating = true;
+        targetPrice.setText("");
+        targetCondition.setText("일반");
+        targetChannel.setSelectedItem("온라인");
+        targetEnabled.setSelected(false);
+        updating = false;
+        targetPriceLabel.setText("즐겨찾기 상품을 먼저 선택하세요.");
         targetDetails.setText("즐겨찾기 상품을 등록하면 구매 기준과 목표를 설정할 수 있습니다.");
       }
     }
+    for (JComponent control : List.of(targetPrice, targetCondition, targetChannel, targetEnabled, saveButton))
+      control.setEnabled(!editingTargetId.isEmpty());
     targetSummary.setText(
         "즐겨찾기 "
             + targetRows.size()
@@ -243,6 +260,7 @@ final class TargetTab extends TabView {
     updating = false;
     targetDirty = false;
     var p = frame.repo.snapshot().product(editingTargetId);
+    targetPriceLabel.setText(p.name() + " · " + unitLabel(p) + "당 목표 (원)");
     String explanation =
         row.get("basis") == null
             ? "관측 4일 미만: 평균 기준을 만들지 않습니다. 개인 목표가 있으면 우선 적용합니다."
