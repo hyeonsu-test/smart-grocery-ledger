@@ -21,11 +21,12 @@ Discovery -> Site : GET detail page
 Site --> Discovery : identity / package / price
 Discovery --> Dialog : Preview (not saved)
 User -> Dialog : Add to automatic collection
-Dialog -> Discovery : confirm(preview, quantity)
+Dialog -> Discovery : confirm(preview, category, total)
 Discovery --> Dialog : verified Result
 Dialog -> ListService : add(result)
-ListService -> Repo : saveAtomic(product, price, settings)
-Repo --> Dialog : save result
+ListService -> Repo : saveAtomic(state)
+Repo --> ListService : save result
+ListService --> Dialog : registration result
 note over User,Repo
 Next startup / refresh collects enabled sources.
 Search and preview alone do not register products.
