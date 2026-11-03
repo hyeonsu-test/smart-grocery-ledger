@@ -19,6 +19,10 @@ import javax.swing.table.*;
 /** Product search, sources and price entry. */
 final class ProductTab extends TabView {
   private final ProductService products;
+  private final OnlineCollectionService online;
+  private JButton collectButton;
+  private String collectionSummary = "";
+  private String collectionDetails = "아직 수집하지 않았습니다.";
   private final JTextArea productDetails = details(5);
   private final JLabel productStatus = new JLabel();
   private final JTable productTable =
@@ -30,9 +34,10 @@ final class ProductTab extends TabView {
   private final JComboBox<String> filterChannel = combo("전체", "온라인", "오프라인");
   private final JCheckBox promotionsOnly = new JCheckBox("현재 행사만");
 
-  ProductTab(LedgerFrame frame, ProductService products) {
+  ProductTab(LedgerFrame frame, ProductService products, OnlineCollectionService online) {
     super(frame);
     this.products = products;
+    this.online = online;
     sortNumbers(productTable, 4, 5);
 
     add(productPage(), BorderLayout.CENTER);
@@ -40,7 +45,7 @@ final class ProductTab extends TabView {
 
   private JPanel productPage() {
     JPanel root =
-        page("상품과 가격 정보", "우유 · 계란 · 라면 · 쌀 · 두부   /   직접 입력·JSON 파일 가져오기   /   웹 가격은 자동 갱신되지 않습니다.");
+        page("상품과 가격 정보", "우유 · 계란 · 라면 · 쌀 · 두부 / 공식 온라인몰의 기본 수집 상품 / 앱 실행 시 하루 한 번 자동 갱신");
     JPanel filters = flow();
     filters.add(filterCategory);
     filters.add(filterStore);
@@ -49,8 +54,9 @@ final class ProductTab extends TabView {
     promotionsOnly.addActionListener(e -> refreshProducts());
     filters.add(frame.button("상품 조회", this::refreshProducts));
     filters.add(frame.button("가격 직접 입력", this::manualDialog));
-    filters.add(frame.button("JSON 피드 연결", this::configureFeed));
-    filters.add(frame.button("연결 피드 갱신", () -> refreshFeed(false)));
+    collectButton = frame.collectionButton();
+    filters.add(collectButton);
+    filters.add(frame.button("수집 결과", () -> frame.showText("상품 정보 수집 결과", collectionDetails)));
     root.add(filters);
     root.add(scroll(productTable, 270));
     productTable
@@ -111,9 +117,9 @@ final class ProductTab extends TabView {
     root.add(productStatus);
     JTextArea note =
         new JTextArea(
-            "가격은 배송비를 제외한 상품 금액입니다. 회원·쿠폰·행사 조건을 구분해 비교하세요.\n"
+            "공개 온라인 가격이며 배송지·매장 가격과 다를 수 있습니다. 코스트코는 회원 가격·배송비 포함입니다.\n"
                 + "확인 후 24시간이 지났거나 확인 시각이 없으면 현재 비교와 예상액에서 제외됩니다.\n"
-                + "피드 갱신은 원래 확인 시각을 유지합니다. 시연 가격은 실제 판매가가 아닙니다.");
+                + "수집한 날부터 가격 이력이 쌓입니다. 관심 상품은 즐겨찾기에 추가해 구매 목표를 설정하세요.");
     note.setEditable(false);
     note.setOpaque(false);
     root.add(note);
@@ -169,11 +175,24 @@ final class ProductTab extends TabView {
     productStatus.setText(
         states.length() > 0
             ? "조회 결과 " + productRows.size() + "건 · 출처별 갱신 결과와 최근 성공 시각은 선택 상품 상세에서 확인"
-            : "조회 결과 " + productRows.size() + "건 · 직접 입력 / JSON 피드");
+            : "조회 결과 " + productRows.size() + "건 · 상품 정보 가져오기로 공식 가격을 수집하세요.");
+    if (!collectionSummary.isEmpty()) productStatus.setText(collectionSummary);
     productStatus.setToolTipText(states.toString());
+    if (collectionSummary.isEmpty() && states.length() > 0) {
+      StringBuilder details = new StringBuilder("저장된 최근 수집 결과\n\n");
+      for (var entry : obj(r.get("sources")).entrySet()) {
+        var source = obj(entry.getValue());
+        details.append(entry.getKey()).append(": ").append(yes(source, "failed") ? "일부 또는 전체 실패" : "성공")
+            .append("\n최근 성공 ").append(def(source, "last_success", "없음"));
+        if (yes(source, "failed")) details.append("\n사유 ").append(s(source, "error"));
+        details.append("\n\n");
+      }
+      details.append("상품 정보 가져오기를 누르면 다시 수집합니다.");
+      collectionDetails = details.toString();
+    }
     productDetails.setText(
         productRows.isEmpty()
-            ? "조회 결과가 없습니다. 조건을 바꾸거나 가격을 직접 입력하세요."
+            ? "조회 결과가 없습니다. 상품 정보 가져오기를 누르거나 조회 조건을 확인하세요."
             : "상품 행을 선택하면 규격·행사·출처를 확인할 수 있습니다.");
     if (!productRows.isEmpty()) {
       int selected = 0;
@@ -194,10 +213,10 @@ final class ProductTab extends TabView {
   private String describeOffer(OfferRow row) {
     if (row.offer() == null) return row.details();
     Object raw = frame.repo.snapshot().map("sources").get(row.offer().store());
-    if (raw == null) return row.details() + "\n연결 피드 갱신 기록 없음 · 직접 확인 가격은 자체 확인 시각으로 판정합니다.";
+    if (raw == null) return row.details() + "\n수집 기록 없음 · 직접 확인 가격은 자체 확인 시각으로 판정합니다.";
     var source = obj(raw);
     return row.details()
-        + "\n피드 최근 성공 "
+        + "\n출처 최근 성공 "
         + (s(source, "last_success").isEmpty() ? "없음" : s(source, "last_success"))
         + (yes(source, "failed") ? " · 갱신 실패: " + s(source, "error") : " · 갱신 성공");
   }
@@ -237,6 +256,68 @@ final class ProductTab extends TabView {
                   chooser.getSelectedFile().getAbsolutePath()));
       if (frame.accepted(r)) frame.status.setText(store + " 피드를 연결했습니다. 갱신 버튼으로 불러오세요.");
     }
+  }
+
+  void collectOnline(boolean auto) {
+    if (busy) return;
+    if (frame.repo.snapshot().demo()) {
+      frame.status.setText("시연 모드는 가상 가격입니다. 실제 수집은 일반 모드에서 사용하세요.");
+      return;
+    }
+    busy = true;
+    frame.collecting(true);
+    frame.status.setText("공식 마트 상품 정보를 수집하는 중…");
+    new SwingWorker<Map<String, Object>, String>() {
+      @Override
+      protected Map<String, Object> doInBackground() {
+        return online.collect(auto, message -> publish(message));
+      }
+
+      @Override
+      protected void process(List<String> messages) {
+        if (!messages.isEmpty()) frame.status.setText("수집 중 · " + messages.get(messages.size() - 1));
+      }
+
+      @Override
+      protected void done() {
+        busy = false;
+        frame.collecting(false);
+        try {
+          var result = get();
+          if (yes(result, "skipped")) {
+            frame.status.setText("오늘 자동 수집을 시도했습니다. 상품 정보 가져오기로 다시 수집할 수 있습니다.");
+            return;
+          }
+          if (!List.of("OK", "PARTIAL_FAILURE", "REFRESH_FAILED").contains(s(result, "status"))) {
+            frame.accepted(result);
+            return;
+          }
+          collectionSummary = "수집 성공 " + def(result, "successful", "0") + "건 · 실패 "
+              + def(result, "failed", "0") + "건 · 자세한 내용은 수집 결과에서 확인";
+          StringBuilder description = new StringBuilder(collectionSummary).append("\n\n");
+          for (var entry : obj(result.getOrDefault("sources", m())).entrySet()) {
+            var source = obj(entry.getValue());
+            description.append(entry.getKey()).append(": 성공 ").append(s(source, "success"))
+                .append(" / 실패 ").append(s(source, "failed_count")).append('\n');
+          }
+          for (var entry : obj(result.getOrDefault("failures", m())).entrySet())
+            description.append(entry.getKey()).append(": ").append(entry.getValue()).append('\n');
+          if (!s(result, "message").isEmpty()) description.append(s(result, "message")).append('\n');
+          description.append("\n실패한 출처는 상품 정보 가져오기로 재시도하세요.\n"
+              + "기존 이력은 보존하며, 수집하지 못한 가격은 현재 비교에서 제외합니다.\n"
+              + "05에서는 관심 상품을 선택해 추가하세요. 과거 가격은 수집한 날짜부터 쌓입니다.");
+          collectionDetails = description.toString();
+          frame.refreshAfterPriceChange();
+          frame.status.setText(collectionSummary);
+          if (result.get("target_result") instanceof Map<?, ?>)
+            frame.targetTab.notifyTargets(obj(result.get("target_result")));
+        } catch (Exception e) {
+          collectionSummary = "수집 실패 · 상품 정보 가져오기로 재시도하세요.";
+          collectionDetails = e.getMessage();
+          frame.status.setText(collectionSummary);
+        }
+      }
+    }.execute();
   }
 
   void refreshFeed(boolean auto) {

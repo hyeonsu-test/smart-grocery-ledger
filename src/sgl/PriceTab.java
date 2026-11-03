@@ -42,6 +42,7 @@ final class PriceTab extends TabView {
     for (JComboBox<?> filter : List.of(priceProduct, priceChannel)) {
       filter.addActionListener(e -> {
         if (!updating) {
+          if (filter == priceProduct) useProductCondition();
           clearComparison();
           clearHistory();
         }
@@ -68,6 +69,7 @@ final class PriceTab extends TabView {
     filters.add(priceChannel);
     filters.add(priceCondition);
     filters.add(frame.button("단위 가격 비교", this::refreshCompare));
+    filters.add(frame.collectionButton());
     root.add(filters);
     root.add(scroll(compareTable, 145));
     compareTable
@@ -152,6 +154,10 @@ final class PriceTab extends TabView {
       int view = compareTable.convertRowIndexToView(selected);
       compareTable.setRowSelectionInterval(view, view);
       compareDetails.setText(compareRows.get(selected).details());
+      if (previous == null && historyBranch.getText().equals("전체")) {
+        historyStore.setSelectedItem(compareRows.get(selected).offer().store());
+        historyBranch.setText(compareRows.get(selected).offer().branch());
+      }
     }
     updating = false;
   }
@@ -200,10 +206,24 @@ final class PriceTab extends TabView {
   }
 
   void setProducts(AppState state) {
+    boolean empty = priceProduct.getItemCount() == 0;
     updating = true;
     fillChoices(priceProduct, state.products());
     if (state.demo() && historyBranch.getText().equals("전체")) historyBranch.setText("시연 지점");
     updating = false;
+    if (empty) useProductCondition();
+  }
+
+  private void useProductCondition() {
+    if (priceProduct.getItemCount() == 0) return;
+    frame.repo.snapshot().latest().stream()
+        .filter(o -> o.productId().equals(chosen(priceProduct)))
+        .findFirst().ifPresent(o -> {
+          updating = true;
+          priceChannel.setSelectedItem(o.channel());
+          priceCondition.setText(o.condition());
+          updating = false;
+        });
   }
 
   private void clearComparison() {

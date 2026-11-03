@@ -34,7 +34,7 @@ record OfferRow(
         + " × "
         + product.packCount()
         + "묶음\n";
-    if (offer == null) return specification + "가격 미확인 · 가격과 출처를 직접 입력하거나 피드를 갱신하세요.";
+    if (offer == null) return specification + "가격 미확인 · 상품 정보 가져오기로 다시 수집하세요.";
     return specification + offer.store()
         + " / "
         + offer.branch()

@@ -13,10 +13,12 @@ jar --create --file resources/api.zip -C doc/api .
 mkdir -p bin/fonts
 cp resources/fonts/* bin/fonts/
 jar --create --file SmartGroceryLedger.jar --main-class sgl.Main -C bin sgl -C resources .
-javac --release 17 -encoding UTF-8 -Xlint:all,-serial -Werror -cp bin -d test-bin test/sgl/ServiceTests.java test/sgl/UiSmokeTests.java test/sgl/UiRenderEvidence.java > test-log/test-compile.log 2>&1 || { cat test-log/test-compile.log; exit 1; }
+javac --release 17 -encoding UTF-8 -Xlint:all,-serial -Werror -cp bin -d test-bin test/sgl/*.java > test-log/test-compile.log 2>&1 || { cat test-log/test-compile.log; exit 1; }
 cp test/fixtures/legacy-ledger-v1.json test-bin/legacy-ledger-v1.json
 java -Dfile.encoding=UTF-8 -cp bin:test-bin sgl.ServiceTests > test-log/service-tests.log 2>&1 || { cat test-log/service-tests.log; exit 1; }
 cat test-log/service-tests.log
+java -Dfile.encoding=UTF-8 -cp bin:test-bin sgl.CollectionTests > test-log/collection-tests.log 2>&1 || { cat test-log/collection-tests.log; exit 1; }
+cat test-log/collection-tests.log
 java -Dfile.encoding=UTF-8 -jar SmartGroceryLedger.jar --smoke-test > test-log/jar-smoke.log 2>&1 || { cat test-log/jar-smoke.log; exit 1; }
 cat test-log/jar-smoke.log
 printf '%s\n' 'Built SmartGroceryLedger.jar and doc/api/index.html (Java 17+)'

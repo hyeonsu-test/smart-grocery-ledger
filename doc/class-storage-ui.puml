@@ -32,7 +32,8 @@ class BudgetTab {
 }
 class ProductTab {
   - products : ProductService
-  - promotionsOnly : JCheckBox
+  - online : OnlineCollectionService
+  ~ collectOnline(auto : boolean)
 }
 class PriceTab {
   - prices : PriceService

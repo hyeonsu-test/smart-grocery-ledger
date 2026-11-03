@@ -16,30 +16,46 @@ abstract class Service {
   ~ repo : Repository
   ~ clock : Clock
   ~ now() : OffsetDateTime
-  ~ call(request : Map, body : Supplier) : Map
+  ~ call() : Map
 }
 class LedgerService {
-  + manageLedger(request : Map) : Map
+  + manageLedger() : Map
 }
 class BudgetService {
-  + manageBudgetPlan(request : Map) : Map
+  + manageBudgetPlan() : Map
 }
 class PriceService {
-  + analyzePrices(request : Map) : Map
-  {static} + normalizeUnitPrice(offer : Map, product : Map) : BigDecimal
+  + analyzePrices() : Map
+  {static} + normalizeUnitPrice() : BigDecimal
 }
 class ProductService {
   - adapter : MartAdapter
   - targets : TargetService
-  + manageProducts(request : Map) : Map
+  + manageProducts() : Map
 }
 class TargetService {
-  + managePurchaseTargets(request : Map) : Map
-  + basis(productId : String, channel : String, condition : String) : Map
+  + managePurchaseTargets() : Map
+  + basis() : Map
 }
 class MartAdapter {
-  + fetchOffers(store : String, path : Path) : Map
+  + fetchOffers() : Map
 }
+class OnlineCollectionService {
+  - collector : ProductCollector
+  - targets : TargetService
+  + collect() : Map
+}
+interface ProductCollector {
+  + collect() : List<Result>
+}
+class OnlineCatalog {
+  - sources : List<Source>
+  + collect() : List<Result>
+}
+Service <|-- OnlineCollectionService
+OnlineCollectionService "1" --> "1" ProductCollector : collector
+OnlineCollectionService "1" --> "0..1" TargetService : targets
+ProductCollector <|.. OnlineCatalog
 Service <|-- LedgerService
 Service <|-- BudgetService
 Service <|-- PriceService
@@ -48,8 +64,9 @@ Service <|-- TargetService
 ProductService "1" --> "1" MartAdapter : adapter
 ProductService "1" --> "0..1" TargetService : targets
 legend bottom
-  Map = Map<String, Object>; Supplier = Supplier<Map<String, Object>>
+  Parameter lists and private helpers omitted.
   + public    - private    ~ package access
-  Constructors and private helper methods omitted.
+  Hollow triangle: inheritance / interface implementation.
+  Constructors and HTTP/parser helpers omitted. No dependency arrows.
 endlegend
 @enduml

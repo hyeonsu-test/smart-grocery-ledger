@@ -1,0 +1,21 @@
+Version: 0.6.0-java-beta
+JAR SHA-256: acbb1e04ee12fd4798d79d3b9a17ebcd95ae95cdb83cb0832eb74dc84ee1366f
+PASS 1 no JSON file controls in customer UI
+PASS 2 collection action in all three relevant tabs
+PASS 3 fresh ledger has no invented prices
+PASS 4 04 button starts collector without files
+PASS 5 duplicate collection disabled
+PASS 6 window remains responsive while collector waits
+PASS 7 03 populated after collection
+PASS 8 04 comparison refreshed after collection
+PASS 9 04 shows today's real observation
+PASS 10 concurrent ledger edit preserved
+PASS 11 retry button restored
+PASS 12 05 waits for explicit favorite choice
+PASS 13 05 favorite selector immediately adds target row
+PASS 14 favorite is saved
+PASS 15 new favorite target can be edited
+PASS 16 insufficient historical basis explained
+PASS 17 fresh app starts automatic collection
+PASS 18 automatic result committed with no user file
+Collection Swing tests: 18 passed, 0 failed

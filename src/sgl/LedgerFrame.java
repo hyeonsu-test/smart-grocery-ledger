@@ -33,6 +33,7 @@ public final class LedgerFrame extends JFrame {
   String loadedMonth;
   private final JTabbedPane tabs = new JTabbedPane();
   final JLabel status = new JLabel("준비됨");
+  private final List<JButton> collectionButtons = new ArrayList<>();
   private int previousTab;
   private boolean changingTab;
   private final javax.swing.Timer timer;
@@ -45,6 +46,10 @@ public final class LedgerFrame extends JFrame {
    * @param autoRefresh enables daily configured-feed refresh while the app runs
    */
   public LedgerFrame(Repository repository, Clock clock, boolean autoRefresh) {
+    this(repository, clock, autoRefresh, new OnlineCatalog(clock));
+  }
+
+  LedgerFrame(Repository repository, Clock clock, boolean autoRefresh, ProductCollector collector) {
     super("Smart Grocery Ledger | Java Swing Beta");
     this.repo = repository;
     this.clock = clock;
@@ -53,7 +58,8 @@ public final class LedgerFrame extends JFrame {
     var targets = new TargetService(repo, clock);
     ledgerTab = new LedgerTab(this, new LedgerService(repo, clock));
     budgetTab = new BudgetTab(this, new BudgetService(repo, clock));
-    productTab = new ProductTab(this, new ProductService(repo, new MartAdapter(), targets, clock));
+    productTab = new ProductTab(this, new ProductService(repo, new MartAdapter(), targets, clock),
+        new OnlineCollectionService(repo, collector, targets, clock));
     priceTab = new PriceTab(this, new PriceService(repo, clock));
     targetTab = new TargetTab(this, targets);
     setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
@@ -115,8 +121,10 @@ public final class LedgerFrame extends JFrame {
             60000,
             e -> {
               if (!productTab.refreshing()
-                  && !repo.snapshot().value("auto_attempt").equals(LocalDate.now(clock).toString())
-                  && !repo.snapshot().map("feed_paths").isEmpty()) productTab.refreshFeed(true);
+                  && repo.readError().isEmpty()
+                  && !repo.snapshot().demo()
+                  && !repo.snapshot().value("online_attempt").equals(LocalDate.now(clock).toString()))
+                productTab.collectOnline(true);
             });
     if (autoRefresh) timer.start();
     addWindowListener(
@@ -137,8 +145,8 @@ public final class LedgerFrame extends JFrame {
                   "데이터 읽기 실패. 파일을 덮어쓰지 않습니다.\n"
                       + repo.readError()
                       + "\n실행 시 --data-dir로 정상 폴더를 지정하세요."));
-    if (autoRefresh && !repo.snapshot().map("feed_paths").isEmpty())
-      SwingUtilities.invokeLater(() -> productTab.refreshFeed(true));
+    if (autoRefresh && !repo.snapshot().demo() && repo.readError().isEmpty())
+      SwingUtilities.invokeLater(() -> productTab.collectOnline(true));
   }
 
   void navigate(int index) {
@@ -224,6 +232,19 @@ public final class LedgerFrame extends JFrame {
     b.setFocusPainted(false);
     b.addActionListener(e -> run(action::run));
     return b;
+  }
+
+  JButton collectionButton() {
+    JButton button = button("상품 정보 가져오기", () -> productTab.collectOnline(false));
+    collectionButtons.add(button);
+    return button;
+  }
+
+  void collecting(boolean running) {
+    for (JButton button : collectionButtons) {
+      button.setEnabled(!running);
+      button.setText(running ? "상품 수집 중…" : "상품 정보 가져오기");
+    }
   }
 
   @Override

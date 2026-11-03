@@ -31,6 +31,7 @@ final class TargetTab extends TabView {
   private final JCheckBox targetEnabled = new JCheckBox("앱 안 알림 사용");
   private final JLabel targetPriceLabel = new JLabel("선택 상품의 단위 목표가");
   private JButton saveButton;
+  private final JComboBox<SwingViews.Choice> favoriteProduct = new JComboBox<>();
 
   TargetTab(LedgerFrame frame, TargetService targets) {
     super(frame);
@@ -60,6 +61,13 @@ final class TargetTab extends TabView {
     JPanel root =
         page("구매 기준과 목표 알림", "직전 28일의 날짜별 평균 × 90% · 최소 관측 4일 · 개인 목표 우선 · 상품별 하루 한 번 앱 안 알림");
     root.add(metric(targetSummary));
+    JPanel addFavorite = flow();
+    addFavorite.add(frame.collectionButton());
+    addFavorite.add(new JLabel("관심 상품"));
+    favoriteProduct.setPreferredSize(new Dimension(270, 30));
+    addFavorite.add(favoriteProduct);
+    addFavorite.add(frame.button("관심 상품 추가", this::addFavorite));
+    root.add(addFavorite);
     root.add(scroll(targetTable, 240));
     targetTable.setDefaultRenderer(
         Object.class,
@@ -130,6 +138,7 @@ final class TargetTab extends TabView {
   }
 
   void refreshTargets() {
+    fillChoices(favoriteProduct, frame.repo.snapshot().products());
     var r =
         targets.managePurchaseTargets(
             m("action", "VIEW", "product_ids", frame.repo.snapshot().array("favorites")));
@@ -170,7 +179,8 @@ final class TargetTab extends TabView {
         targetEnabled.setSelected(false);
         updating = false;
         targetPriceLabel.setText("즐겨찾기 상품을 먼저 선택하세요.");
-        targetDetails.setText("즐겨찾기 상품을 등록하면 구매 기준과 목표를 설정할 수 있습니다.");
+        targetDetails.setText("상품 정보 가져오기로 가격을 수집한 뒤 위에서 관심 상품을 선택해 추가하세요.\n"
+            + "개인 목표는 바로 설정할 수 있습니다. 추천 기준은 서로 다른 과거 관측일이 4일 이상일 때 표시됩니다.");
       }
     }
     for (JComponent control : List.of(targetPrice, targetCondition, targetChannel, targetEnabled, saveButton))
@@ -182,6 +192,21 @@ final class TargetTab extends TabView {
             + LocalDate.now(frame.clock).minusDays(28)
             + " ~ "
             + LocalDate.now(frame.clock).minusDays(1));
+  }
+
+  private void addFavorite() {
+    if (favoriteProduct.getItemCount() == 0) {
+      frame.status.setText("상품 정보 가져오기로 상품을 먼저 수집하세요.");
+      return;
+    }
+    var service = new ProductService(frame.repo, new MartAdapter(), targets, frame.clock);
+    var result = service.manageProducts(m("action", "SET_FAVORITE", "product_id",
+        chosen(favoriteProduct), "isFavorite", true));
+    if (frame.accepted(result)) {
+      refreshTargets();
+      frame.productTab.refreshProducts();
+      frame.status.setText("관심 상품을 추가했습니다. 선택한 상품의 목표가와 알림을 설정하세요.");
+    }
   }
 
   private void saveTarget() {

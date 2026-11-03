@@ -122,6 +122,11 @@ public final class AppState {
         o -> o.store().equals(store) && !o.method().equals("직접 입력") ? o.withFailedFeed() : o);
   }
 
+  void failOnline(String url) {
+    observations.replaceAll(o -> o.method().equals("웹 자동 수집") && o.url().equals(url)
+        ? o.withFailedFeed() : o);
+  }
+
   List<PriceObservation> latest() {
     Map<PriceObservation.Key, PriceObservation> last = new LinkedHashMap<>();
     for (var o : observations)

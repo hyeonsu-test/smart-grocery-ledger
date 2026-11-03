@@ -1,0 +1,35 @@
+Version: 0.6.0-java-beta
+JAR SHA-256: acbb1e04ee12fd4798d79d3b9a17ebcd95ae95cdb83cb0832eb74dc84ee1366f
+PASS 1 public BASIC discount price
+PASS 2 promotion interval from matching event
+PASS 3 public branch and general condition
+PASS 4 30 egg unit conversion
+PASS 5 changed specification rejected
+PASS 6 wrong product ID rejected
+PASS 7 wrong currency rejected
+PASS 8 zero price rejected
+PASS 9 sold-out product rejected
+PASS 10 conditional card discount rejected
+PASS 11 metadata and actual price mismatch rejected
+PASS 12 unstructured page never becomes price
+PASS 13 Costco membership and included shipping retained
+PASS 14 offer valid-until is not invented promotion
+PASS 15 ordinary member price is not mislabeled as promotion
+PASS 16 expired public offer rejected
+PASS 17 network timeout becomes source failure
+PASS 18 non-HTTPS source rejected before network
+PASS 19 first startup needs no JSON or manual entry
+PASS 20 collection does not invent user favorites
+PASS 21 daily automatic guard
+PASS 22 manual button retries and same-reading deduplication
+PASS 23 failure preserves catalog
+PASS 24 failure preserves history and excludes current web price
+PASS 25 failure preserves favorites
+PASS 26 successful retry recovers current price
+PASS 27 one failed source does not discard other sources
+PASS 28 UI saves during fetch survive result merge
+PASS 29 demo never mixes real prices
+PASS 30 save failure commits neither prices nor daily guard
+PASS 31 new target inherits source membership condition
+PASS 32 collected prices survive restart
+Collection tests: 32 passed, 0 failed

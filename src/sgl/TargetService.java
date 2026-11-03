@@ -127,6 +127,8 @@ public final class TargetService extends Service {
           for (Object id : new LinkedHashSet<>(ids)) {
             String pid = id.toString();
             if (!st.array("favorites").contains(pid)) continue;
+            PriceObservation current = st.latest().stream()
+                .filter(o -> o.productId().equals(pid)).findFirst().orElse(null);
             var target =
                 obj(
                     st.map("targets")
@@ -140,7 +142,7 @@ public final class TargetService extends Service {
                                 "channel",
                                 "온라인",
                                 "condition",
-                                "일반")));
+                                current == null ? "일반" : current.condition())));
             var calc = basis(pid, def(target, "channel", "온라인"), def(target, "condition", "일반"));
             BigDecimal threshold =
                 target.get("price") == null

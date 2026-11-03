@@ -1,0 +1,26 @@
+Version: 0.6.0-java-beta
+JAR SHA-256: acbb1e04ee12fd4798d79d3b9a17ebcd95ae95cdb83cb0832eb74dc84ee1366f
+1/8 · 홈플러스 · 서울우유 1L
+2/8 · 홈플러스 · 행복대란 30개입
+3/8 · 홈플러스 · 농심 신라면 120G*5입
+4/8 · 홈플러스 · simplus 고소하고 담백한 두부 300G
+5/8 · 코스트코 · 연세우유 멸균우유 200ml x 24 x 2
+6/8 · 코스트코 · 농심 신라면 120g x 30개
+7/8 · 코스트코 · 쌀명당 고시히카리 완전미 5kg
+8/8 · 이마트 · [서울우유] 1000ml 나100%
+{"status":"PARTIAL_FAILURE","successful":7,"failed":1,"failures":{"[서울우유] 1000ml 나100% / 이마트":"사이트 접근 거부 (HTTP 403)"},"sources":{"홈플러스":{"success":4,"failed_count":0,"errors":{}},"코스트코":{"success":3,"failed_count":0,"errors":{}},"이마트":{"success":0,"failed_count":1,"errors":{"[서울우유] 1000ml 나100%":"사이트 접근 거부 (HTTP 403)"}}},"target_result":{"status":"OK","items":[],"notifications":[]}}
+서울우유 1L
+행복대란 30개입
+농심 신라면 120G*5입
+simplus 고소하고 담백한 두부 300G
+연세우유 멸균우유 200ml x 24 x 2
+농심 신라면 120g x 30개
+쌀명당 고시히카리 완전미 5kg
+VERIFIED web-hp-milk 3090 / 309.000 일반 익스프레스 · 공개 기준점포 245
+VERIFIED web-hp-eggs 5990 / 199.6666666666666666666666666666667 일반 대형마트 · 공개 기준점포 37
+VERIFIED web-hp-ramen 4150 / 830 일반 익스프레스 · 공개 기준점포 245
+VERIFIED web-hp-tofu 1290 / 430.00 일반 대형마트 · 공개 기준점포 37
+VERIFIED web-co-milk 27990.0 / 291.5625 코스트코 회원 온라인몰 · 배송비 포함
+VERIFIED web-co-ramen 24990.0 / 833.0 코스트코 회원 온라인몰 · 배송비 포함
+VERIFIED web-co-rice 22990.0 / 459.8000 코스트코 회원 온라인몰 · 배송비 포함
+Live collection and comparison PASS: 7

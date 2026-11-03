@@ -32,8 +32,12 @@
  * respectively ml, 개, 봉, g, g. An offer contains product_id, store, branch, channel, price,
  * condition, url, checked_date, checked_at, start and end. Optional checked_at may be empty, which
  * excludes the price from current comparisons. Store names are 이마트, 홈플러스, 코스트코. The channel is 온라인
- * or 오프라인. Prices are product/package totals before unit conversion; delivery charges are excluded.
- * Manual entry and local JSON feeds are implemented; live retailer web crawling is not.
+ * or 오프라인. Prices are published package totals before unit conversion. Costco prices require
+ * membership and include delivery; these conditions are retained, not silently normalized away.
+ * {@link sgl.OnlineCollectionService} fetches the built-in catalog via {@link sgl.OnlineCatalog}
+ * on startup once per day, or on the collection button. Homeplus and Costco public product pages
+ * are supported; inaccessible sources are reported independently. No user-supplied feed file is
+ * needed. {@link sgl.MartAdapter} remains a legacy local-snapshot API, without a customer UI.
  *
  * <p>Product queries include catalog-only products with null price and unit_price when source
  * filters are empty. promotions_only selects current eligible promotions. Manual and feed
@@ -44,7 +48,8 @@
  *
  * <p>Repository validates complete state, writes and flushes a same-directory temporary file, then
  * atomically replaces the destination. Unsupported atomic moves fail closed. All services share one
- * repository lock. A process-level file lock prevents two running apps from editing the same
+ * repository lock for commits. Network collection runs outside the lock and merges into a fresh
+ * snapshot, preserving edits made while downloading. A process-level file lock prevents two running apps from editing the same
  * ledger. Alerts are generated only while the app runs, once per product per local day, and only
  * after the deduplication guard is saved successfully.
  */

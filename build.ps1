@@ -32,9 +32,11 @@ New-Item -ItemType Directory -Path 'bin/fonts' -Force | Out-Null
 Get-ChildItem -LiteralPath 'resources/fonts' -File | Copy-Item -Destination 'bin/fonts'
 Invoke-Jdk jar @('--create','--file','SmartGroceryLedger.jar','--main-class','sgl.Main','-C','bin','sgl','-C','resources','.') 'test-log/jar-build.log'
 if (!$SkipTests) {
-    Invoke-Jdk javac @('-J-Dfile.encoding=UTF-8','--release','17','-encoding','UTF-8','-Xlint:all,-serial','-Werror','-cp','bin','-d','test-bin','test/sgl/ServiceTests.java','test/sgl/UiSmokeTests.java','test/sgl/UiRenderEvidence.java') 'test-log/test-compile.log'
+    $testSources = @(Get-ChildItem -LiteralPath 'test/sgl' -Filter '*.java' | ForEach-Object { 'test/sgl/' + $_.Name })
+    Invoke-Jdk javac (@('-J-Dfile.encoding=UTF-8','--release','17','-encoding','UTF-8','-Xlint:all,-serial','-Werror','-cp','bin','-d','test-bin') + $testSources) 'test-log/test-compile.log'
     Copy-Item -LiteralPath 'test/fixtures/legacy-ledger-v1.json' -Destination 'test-bin/legacy-ledger-v1.json'
     Invoke-Jdk java @('-Dfile.encoding=UTF-8','-cp','bin;test-bin','sgl.ServiceTests') 'test-log/service-tests.log'
+    Invoke-Jdk java @('-Dfile.encoding=UTF-8','-cp','bin;test-bin','sgl.CollectionTests') 'test-log/collection-tests.log'
     Invoke-Jdk java @('-Dfile.encoding=UTF-8','-jar','SmartGroceryLedger.jar','--smoke-test') 'test-log/jar-smoke.log'
 }
 Write-Host 'Built SmartGroceryLedger.jar and doc/api/index.html (Java 17+)'

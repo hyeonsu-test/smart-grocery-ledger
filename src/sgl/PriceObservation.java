@@ -132,7 +132,8 @@ public record PriceObservation(
   }
 
   boolean isPromotion() {
-    return start != null || end != null || !condition.equals("일반");
+    return start != null || end != null
+        || !condition.equals("일반") && !condition.equals("코스트코 회원");
   }
 
   boolean inPeriod(LocalDate date) {

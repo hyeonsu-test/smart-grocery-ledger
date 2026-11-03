@@ -3,6 +3,7 @@ src/sgl/BudgetService.java
 src/sgl/BudgetTab.java
 src/sgl/Data.java
 src/sgl/DemoData.java
+src/sgl/HttpPageClient.java
 src/sgl/Json.java
 src/sgl/LedgerFrame.java
 src/sgl/LedgerService.java
@@ -10,11 +11,15 @@ src/sgl/LedgerTab.java
 src/sgl/Main.java
 src/sgl/MartAdapter.java
 src/sgl/OfferRow.java
+src/sgl/OfficialPageParser.java
+src/sgl/OnlineCatalog.java
+src/sgl/OnlineCollectionService.java
 src/sgl/package-info.java
 src/sgl/PriceObservation.java
 src/sgl/PriceService.java
 src/sgl/PriceTab.java
 src/sgl/Product.java
+src/sgl/ProductCollector.java
 src/sgl/ProductService.java
 src/sgl/ProductTab.java
 src/sgl/Repository.java
