@@ -1,0 +1,25 @@
+PASS first launch starts without ledger or invented products
+PASS startup automatic collection populates official products
+STARTUP 수집 성공 7건 · 실패 1건 · 자세한 내용은 수집 결과에서 확인
+PASS automatic prices do not create spending or favorites
+PASS live storefront search returns products
+PASS chosen non-default product is present in live search
+PASS detail preview matches the selected product
+PASS verified package enables explicit registration
+PASS add button persists the chosen collection source
+PASS registered product remains selected in manager
+PASS collection remains separate from purchase goals
+PASS 03 selects the newly added product
+PASS 04 uses actual package price per 100ml
+PASS 04 history starts with the real observation day
+PASS 05 selects the new favorite editor
+PASS new first-day favorite clearly has no automatic basis
+PASS goal save confirms success
+PASS saved personal goal applies immediately
+PASS goal notification saved for the right product
+PASS later collection includes the newly selected product
+PASS price and goal workflow never creates actual expense
+PASS restart keeps actual same-day price history
+PASS restart restores the saved personal goal
+PASS restart preserves same-day notification guard
+LIVE first-use journey: 23 passed; real startup, search, registration, 04, 05 and restart

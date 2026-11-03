@@ -32,6 +32,8 @@ final class CollectionDialog extends JDialog {
   private ProductDiscovery.Preview preview;
   private SwingWorker<?,?> worker;
   private boolean busy;
+  private long selectionRevision;
+  private boolean showingPreview;
 
   CollectionDialog(LedgerFrame frame,ProductDiscovery discovery,CollectionListService settings) {
     super(frame,"상품 검색과 자동 수집 목록",true);
@@ -92,13 +94,38 @@ final class CollectionDialog extends JDialog {
     networkButtons.addAll(List.of(search,inspect,inspectUrl));
     resetPreview();reloadList();
     status.setText("기본 목록 밖의 상품도 검색하거나 공식 상품 상세 주소로 추가할 수 있습니다.\n홈플러스 익스프레스·코스트코 검색 지원. 홈플러스 대형마트는 상품 주소로 추가할 수 있습니다.");
+    found.getSelectionModel().addListSelectionListener(e -> {
+      if(e.getValueIsAdjusting())return;
+      invalidatePreview();
+      int row=found.getSelectedRow();
+      showingPreview=true;
+      try {url.setText(row<0?"":hits.get(found.convertRowIndexToModel(row)).url());}
+      finally {showingPreview=false;}
+    });
+    url.getDocument().addDocumentListener(SwingViews.change(this::invalidatePreview));
+    keyword.getDocument().addDocumentListener(SwingViews.change(this::queryChanged));
+    store.addActionListener(e -> queryChanged());
+  }
+
+  private void invalidatePreview() {
+    if(showingPreview)return;
+    selectionRevision++;
+    resetPreview();
+    status.setText("선택 또는 주소가 바뀌었습니다. 원하는 상품을 다시 확인한 뒤 추가하세요.");
+  }
+  private void queryChanged() {
+    invalidatePreview();
+    clear(found);hits=List.of();
+    status.setText("검색어와 온라인몰을 확인하고 온라인 상품 검색을 누르세요.");
   }
 
   private void search() {
     if(busy)return;
     String query=keyword.getText(),site=selected(store);
     resetPreview();
+    long requested=selectionRevision;
     runNetwork("온라인몰에서 검색하는 중…",()->discovery.search(site,query),result->{
+      if(requested!=selectionRevision){status.setText("검색 조건이 바뀌었습니다. 다시 검색하세요.");return;}
       hits=result;clear(found);
       for(var hit:hits)addRow(found,hit.store(),hit.name());
       if(!hits.isEmpty())found.setRowSelectionInterval(0,0);
@@ -113,8 +140,12 @@ final class CollectionDialog extends JDialog {
   private void inspect(String address) {
     if(busy)return;
     resetPreview();
+    long requested=selectionRevision;
     runNetwork("상품 이름·가격·용량을 확인하는 중…",()->discovery.inspect(address),result->{
-      preview=result;url.setText(result.url());
+      if(requested!=selectionRevision){status.setText("선택 또는 주소가 바뀌었습니다. 원하는 상품을 다시 확인하세요.");return;}
+      preview=result;
+      showingPreview=true;
+      try {url.setText(result.url());} finally {showingPreview=false;}
       var q=result.quantity();
       if(q!=null){category.setSelectedItem(q.category());quantity.setText(q.total().stripTrailingZeros().toPlainString());}
       else {category.setSelectedItem("기타 식품");quantity.setText("");}
@@ -133,8 +164,9 @@ final class CollectionDialog extends JDialog {
       var result=discovery.confirm(preview,selected(category),num(quantity.getText(),false));
       var saved=settings.add(result);
       if(!s(saved,"status").equals("OK")){status.setText(def(saved,"message","저장하지 못했습니다."));return;}
-      if(yes(saved,"duplicate")){status.setText(s(saved,"message"));tabs.setSelectedIndex(1);return;}
-      frame.refreshAfterPriceChange();reloadList();
+      if(yes(saved,"duplicate")){reloadList();selectTracked(CollectionSource.keyOf(result.url()));status.setText(s(saved,"message"));tabs.setSelectedIndex(1);return;}
+      frame.refreshAfterPriceChange();frame.productTab.selectRegisteredProduct(result.product().id());
+      reloadList();selectTracked(CollectionSource.keyOf(result.url()));
       status.setText(result.product().name()+" · "+money(result.observation().price())+"원\n자동 수집 목록에 저장했습니다. 다음 실행·갱신에 포함됩니다. 05에서 관심 상품으로도 추가할 수 있습니다.");
       resetPreview();tabs.setSelectedIndex(1);
     } catch(RuntimeException e){status.setText(e.getMessage());}
@@ -153,6 +185,8 @@ final class CollectionDialog extends JDialog {
     });
   }
   private void reloadList() {
+    int previous=tracked.getSelectedRow();
+    String key=previous<0?"":sources.get(tracked.convertRowIndexToModel(previous)).key();
     sources=settings.list();clear(tracked);
     for(var source:sources) {
       var p=source.product();
@@ -161,6 +195,13 @@ final class CollectionDialog extends JDialog {
     }
     tabs.setTitleAt(1,"수집 목록 관리 ("+sources.size()+"개)");
     if(!sources.isEmpty())tracked.setRowSelectionInterval(0,0);
+    selectTracked(key);
+  }
+  private void selectTracked(String key) {
+    for(int i=0;i<sources.size();i++)if(sources.get(i).key().equals(key)) {
+      int row=tracked.convertRowIndexToView(i);tracked.setRowSelectionInterval(row,row);
+      tracked.scrollRectToVisible(tracked.getCellRect(row,0,true));return;
+    }
   }
   private void resetPreview() {
     preview=null;previewText.setText("상품을 확인한 뒤 여기에 이름과 판매 묶음 규격이 표시됩니다.");

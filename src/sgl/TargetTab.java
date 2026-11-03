@@ -123,6 +123,10 @@ final class TargetTab extends TabView {
         frame.button(
             "현재 가격으로 알림 확인",
             () -> {
+              if(targetDirty) {
+                frame.status.setText("수정한 목표를 먼저 저장한 뒤 알림을 확인하세요. 이전 설정으로 알리지 않았습니다.");
+                return;
+              }
               var r =
                   targets.managePurchaseTargets(
                       m(
@@ -133,6 +137,8 @@ final class TargetTab extends TabView {
               if (frame.accepted(r)) {
                 notifyTargets(r);
                 refreshTargets();
+                if(s(r,"status").equals("OK") && Data.list(r.get("notifications")).isEmpty())
+                  frame.status.setText("새 알림이 없습니다. 목표 기준·현재 충족·알림 켜짐과 최근 알림 날짜를 확인하세요.");
               }
             }));
     root.add(actions);
@@ -163,7 +169,7 @@ final class TargetTab extends TabView {
           money(row.get("basis")),
           money(t.get("price")),
           money(row.get("applied")),
-          Data.list(row.get("matches")).isEmpty() ? "미충족" : "충족",
+          row.get("applied")==null ? "기준 없음" : Data.list(row.get("matches")).isEmpty() ? "미충족" : "충족",
           yes(t, "enabled") ? "켜짐" : "꺼짐",
           s(row, "last_alert"));
     }
@@ -247,6 +253,7 @@ final class TargetTab extends TabView {
     if (frame.accepted(r)) {
       targetDirty = false;
       refreshTargets();
+      frame.status.setText("목표 설정을 저장했습니다. 현재 가격으로 알림 확인을 눌러 확인할 수 있습니다.");
     }
   }
 
@@ -314,7 +321,9 @@ final class TargetTab extends TabView {
             + " 단위\n"
             + explanation
             + "\n"
-            + (matches.length() == 0
+            + (row.get("applied")==null
+                ? "목표 기준 없음: 개인 목표를 입력하거나 과거 관측일이 4일 이상 쌓인 뒤 평균 기준을 사용하세요."
+                : matches.length() == 0
                 ? "현재 기준 충족 가격 없음: 유효성·판매 경로·조건·목표를 확인하세요."
                 : "기준 충족: " + matches)
             + "\n미확인·만료·오래됨·갱신 실패 가격은 비교와 알림에서 제외합니다.");

@@ -37,6 +37,7 @@ class ProductTab {
   - worker : SwingWorker
   - closed : boolean
   ~ collectOnline(auto : boolean)
+  ~ selectRegisteredProduct(id)
   ~ close()
 }
 class PriceTab {

@@ -1,4 +1,4 @@
-﻿PASS 1 public BASIC discount price
+PASS 1 public BASIC discount price
 PASS 2 promotion interval from matching event
 PASS 3 public branch and general condition
 PASS 4 30 egg unit conversion

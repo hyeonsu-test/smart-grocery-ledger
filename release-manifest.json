@@ -1,9 +1,9 @@
 {
-  "version": "0.7.3-java-beta",
+  "version": "0.7.4-java-beta",
   "built_for_java": 17,
   "build_jdk": "Temurin 21.0.9",
-  "jar_sha256": "5402377ca1cb44cc27bd16805fae58e37a73075049655598d8bd7c3f13eb835f",
-  "recorded_at": "2026-11-03T20:10:06.861511+09:00",
+  "jar_sha256": "328d7fda1340f5962053156ae9724cb82d4cd3be2e5ed202ba10c0992d4c040e",
+  "recorded_at": "2026-11-03T20:27:47.448416+09:00",
   "service_tests": 61,
   "swing_checks": 58,
   "verified_platforms": [
@@ -38,7 +38,7 @@
     ],
     "capture": "actual JTabbedPane, five selected states per scale",
     "regular_sha256": "53750379270312368cf7641901f43a98dd892e3d9d5798cf25cdc245c85c71c0",
-    "scales_verified_in_version": "0.5.2; same font and tab renderer in 0.7.3"
+    "scales_verified_in_version": "0.5.2; same font and tab renderer in 0.7.4"
   },
   "collection_tests": 32,
   "collection_swing_checks": 18,
@@ -84,15 +84,24 @@
       "checks": 76,
       "products": 6
     },
-    "verified_in_version": "0.7.3; six products freshly registered and recollected on both platforms"
+    "verified_in_version": "0.7.4; six products freshly registered and recollected on both platforms"
   },
   "recheck_tests": 61,
-  "total_regression_checks_per_platform": 386,
+  "total_regression_checks_per_platform": 433,
   "current_live_stock_change": {
     "unavailable": "프링글스 양파맛 110G",
     "replacement": "롯데 빼빼로 아몬드 132G",
     "behavior": "Out-of-stock source rejected; isolated verification selected an available alternative",
     "verified_in_version": "0.7.2; retained historical failed-source test"
   },
-  "boundary_tests": 40
+  "boundary_tests": 40,
+  "journey_tests": 47,
+  "live_first_use_journey": {
+    "checks_per_platform": 23,
+    "platforms": [
+      "Windows Java21",
+      "Linux Java17 WSLg"
+    ],
+    "flow": "fresh startup -> live Homeplus water search -> explicit registration -> 04 -> 05 -> recollection -> restart"
+  }
 }

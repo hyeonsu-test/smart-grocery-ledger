@@ -62,3 +62,9 @@ ProductDiscovery.packageTotal은 명시적인 앞뒤 묶음 배수를 적용하�
 PriceObservation.minimumQuantity는 수집된 가격 조건의 최소 판매 묶음 수를 반환합니다. BudgetService는 계획 수량이 이 값보다 작으면 해당 가격을 예상액에서 제외하고 estimateReason을 반환합니다. BudgetTab은 이유를 예상액 칸에 표시합니다. 상품 규격·단가와 실제 결제 기록은 독립적으로 유지합니다.
 
 LedgerFrame.dispose는 ProductTab.close를 호출합니다. ProductTab은 닫힘 상태를 설정하고 OnlineCollectionService.close로 이후 저장을 차단한 뒤 SwingWorker를 취소합니다. 서비스의 닫힘 확인과 저장은 같은 Repository 잠금 안에서 처리하므로 이미 시작한 저장만 종료 전에 완료됩니다. 네트워크를 기다리느라 저장 잠금을 잡지 않으며 늦은 응답은 반영하지 않습니다. 닫힌 탭의 진행·완료 콜백은 화면이나 알림 창을 갱신하지 않습니다.
+
+## 검색 선택과 목표 편집
+
+CollectionDialog는 selectionRevision으로 검색·상세 확인 요청 시점의 선택과 현재 선택을 대조합니다. 상품 행·주소·검색 조건이 바뀌면 미리보기와 등록 버튼을 해제하며 이전 선택의 지연 응답을 표시하지 않습니다. 등록·중지·재개 후에는 수집 출처 키로 같은 행을 선택합니다. ProductTab.selectRegisteredProduct는 새 상품이 기존 필터에 가려지지 않도록 표시합니다.
+
+TargetTab은 적용 기준이 없는 항목을 기준 없음으로 표시합니다. targetDirty인 동안 수동 알림 평가를 막아 저장된 이전 목표로 알림 이력을 소모하지 않게 합니다. 목표 저장과 새 알림 없음은 상태 표시줄에 안내합니다. TargetService의 저장된 목표 평가 계약은 유지합니다.

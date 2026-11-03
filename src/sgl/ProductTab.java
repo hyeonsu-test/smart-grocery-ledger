@@ -228,6 +228,20 @@ final class ProductTab extends TabView {
     }
   }
 
+  void selectRegisteredProduct(String productId) {
+    filterCategory.setSelectedIndex(0);
+    filterStore.setSelectedIndex(0);
+    filterChannel.setSelectedIndex(0);
+    promotionsOnly.setSelected(false);
+    refreshProducts();
+    for (int i=0;i<productRows.size();i++) if(productRows.get(i).product().id().equals(productId)) {
+      int row=productTable.convertRowIndexToView(i);
+      productTable.setRowSelectionInterval(row,row);
+      productTable.scrollRectToVisible(productTable.getCellRect(row,0,true));
+      return;
+    }
+  }
+
   private String describeOffer(OfferRow row) {
     if (row.offer() == null) return row.details();
     Object raw = frame.repo.snapshot().map("sources").get(row.offer().store());

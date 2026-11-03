@@ -1,3 +1,3 @@
 PASS executable JAR: 5 services, write/reload, embedded Javadoc
 OS=Windows 11 amd64 Java=26
-JAR SHA-256 5402377ca1cb44cc27bd16805fae58e37a73075049655598d8bd7c3f13eb835f
+JAR SHA-256 328d7fda1340f5962053156ae9724cb82d4cd3be2e5ed202ba10c0992d4c040e

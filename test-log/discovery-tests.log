@@ -1,4 +1,4 @@
-﻿PASS 1 canonical Homeplus URL removes tracking
+PASS 1 canonical Homeplus URL removes tracking
 PASS 2 same SKU deduplicates alternate Costco paths
 PASS 3 lookalike host rejected
 PASS 4 plain HTTP rejected

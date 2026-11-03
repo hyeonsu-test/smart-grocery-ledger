@@ -15,6 +15,9 @@ class CollectionDialog {
   - discovery : ProductDiscovery
   - settings : CollectionListService
   - sources : List<CollectionSource>
+  - selectionRevision : long
+  - invalidatePreview()
+  - selectTracked(key)
 }
 class ProductDiscovery {
   - reader : PageReader

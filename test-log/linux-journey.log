@@ -1,0 +1,48 @@
+PASS 1 fresh ledger has no fabricated products
+PASS 2 04 starts with no invented prices
+PASS 3 05 cannot save before a favorite exists
+PASS 4 empty 05 explains collection and favorite setup
+PASS 5 zero results cannot add a stale product
+PASS 6 search displays two official candidates
+PASS 7 search alone never registers a product
+PASS 8 confirmed A can be explicitly added
+PASS 9 selecting B invalidates preview A
+PASS 10 address follows the selected result
+PASS 11 invalidated add does not save A
+PASS 12 B confirmation shows B identity
+PASS 13 editing URL invalidates B preview
+PASS 14 detail request can remain pending
+PASS 15 late A response cannot restore registration after B selection
+PASS 16 stale completion leaves disk prices empty
+PASS 17 changed search words clear old results and preview
+PASS 18 explicit confirmed A registers once
+PASS 19 new source is selected in collection list
+PASS 20 B is registered separately without replacing A
+PASS 21 new B stays selected even with existing A
+PASS 22 03 shows and selects B despite previous filters
+PASS 23 pause keeps the same collection row selected
+PASS 24 pause affects selected B only
+PASS 25 A remains enabled after pausing B
+PASS 26 resume also keeps B selected
+PASS 27 04 compares the newly added B
+PASS 28 04 unit agrees with official package amount
+PASS 29 04 has only the observed day
+PASS 30 05 editor selects B immediately
+PASS 31 first goal distinguishes missing basis from not reached
+PASS 32 missing basis explains the next step
+PASS 33 save gives explicit confirmation
+PASS 34 personal unit target works on the first day
+PASS 35 unsaved target cannot consume a saved-target alert
+PASS 36 blocked evaluation preserves edited goal
+PASS 37 unsaved evaluation explains saving first
+PASS 38 blocked evaluation changes no ledger bytes
+PASS 39 saved low target is genuinely not reached
+PASS 40 no alert still gives visible feedback
+PASS 41 clearing first-day personal goal returns to missing basis
+PASS 42 saved reached target issues a durable alert
+PASS 43 repeated evaluation explains no duplicate alert
+PASS 44 goal restored after full window restart
+PASS 45 restarted goal retains the correct state
+PASS 46 registered collection persists across restart
+PASS 47 restart does not repeat today's notification
+Journey tests: 47 passed, 0 failed
