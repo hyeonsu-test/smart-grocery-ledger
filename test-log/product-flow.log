@@ -1,0 +1,56 @@
+PASS 1 official preview enables explicit registration
+PASS 2 new product saved alongside existing ledger
+PASS 3 04 product selector updates without restart
+PASS 4 05 favorite selector updates without restart
+PASS 5 04 ranks registered coffee
+PASS 6 04 replaces prior retailer and branch when switching to coffee
+PASS 7 04 history uses the newly selected retailer
+PASS 8 04 keeps Costco membership condition
+PASS 9 04 normalizes coffee package to 100g
+PASS 10 05 adding new favorite selects its target editor
+PASS 11 05 new target inherits collected membership condition
+PASS 12 05 labels the same comparison unit
+PASS 13 new item has no invented four-day historical basis
+PASS 14 target is saved under the new product ID
+PASS 15 saving new target does not alter previous product
+PASS 16 personal target works immediately before four observed days
+PASS 17 registered item sends an enabled reached alert
+PASS 18 same-day alert is not duplicated
+PASS 19 favorite and target survive disk reload
+PASS 20 alert guard survives disk reload
+PASS 21 04 compares two exact-spec new catalog items
+PASS 22 04 selected comparable row uses that product's history
+PASS 23 background refresh retains custom history branch
+PASS 24 switching back restores that product's retailer and branch
+PASS 25 04 category unit integration: 검증 생수 2L
+PASS 26 05 category target integration: 검증 생수 2L
+PASS 27 04 category unit integration: 검증 과자 200g
+PASS 28 05 category target integration: 검증 과자 200g
+PASS 29 04 category unit integration: 검증 커피컵 100개
+PASS 30 05 category target integration: 검증 커피컵 100개
+PASS 31 04 category unit integration: 검증 우유 1L
+PASS 32 05 category target integration: 검증 우유 1L
+PASS 33 04 category unit integration: 검증 계란 10개입
+PASS 34 05 category target integration: 검증 계란 10개입
+PASS 35 04 category unit integration: 검증 라면 5봉
+PASS 36 05 category target integration: 검증 라면 5봉
+PASS 37 04 category unit integration: 검증 쌀 4kg
+PASS 38 05 category target integration: 검증 쌀 4kg
+PASS 39 04 category unit integration: 검증 두부 300g
+PASS 40 05 category target integration: 검증 두부 300g
+PASS 41 declining favorite switch preserves unsaved target and identity
+PASS 42 accepting favorite switch loads only the requested product
+PASS 43 pausing collection preserves the valid current target price
+PASS 44 paused price expires after 24 hours and cannot satisfy targets
+PASS 45 successful later-day collection evaluates saved target automatically
+PASS 46 later-day automatic alert is also durable
+PASS 47 failed collection excludes new product from current target matches
+PASS 48 collection failure retains the two actually observed history days
+PASS 49 removing source does not erase saved favorite and purchase goal
+PASS 50 four real fixture days enable the 90-percent unit-price basis
+PASS 51 clearing personal target returns to historical basis
+PASS 52 disabled target emits no notification
+PASS 53 long product name does not push target save button out of the minimum-size window
+PASS 54 registered products remain selectable after full frame restart
+PASS 55 all newly registered products survive full restart
+Product flow tests: 55 passed, 0 failed

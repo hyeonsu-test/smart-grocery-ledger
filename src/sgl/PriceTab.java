@@ -23,8 +23,9 @@ final class PriceTab extends TabView {
   private final JTable compareTable = table("순위", "상품", "마트 / 지점", "묶음 가격", "단위 가격", "상태");
   private final JTable historyTable = table("확인 날짜", "단위 가격");
   private List<OfferRow> compareRows = new ArrayList<>();
-  private final JTextField priceCondition = new JTextField("일반", 6);
-  private final JTextField historyBranch = new JTextField("전체", 7);
+  private String historyProductId = "";
+  private final JTextField priceCondition = new JTextField("일반", 12);
+  private final JTextField historyBranch = new JTextField("전체", 16);
   private final JTextField historyStart = new JTextField(10);
   private final JTextField historyEnd = new JTextField(10);
   private final JComboBox<String> priceChannel = combo("온라인", "오프라인");
@@ -63,12 +64,12 @@ final class PriceTab extends TabView {
     JPanel root =
         page(
             "같은 조건의 단위 가격 비교",
-            "우유 100ml · 계란 1개 · 라면 1봉 · 쌀/두부 100g 기준. 브랜드·세부 규격·경로·가격 조건을 맞춥니다.");
+            "음료·우유 100ml · 식품 100g · 계란·라면·개수 상품 1개 기준. 같은 브랜드·규격·판매 조건끼리 비교합니다.");
     JPanel filters = flow();
     filters.add(priceProduct);
     filters.add(priceChannel);
     filters.add(priceCondition);
-    filters.add(frame.button("단위 가격 비교", this::refreshCompare));
+    filters.add(frame.button("단위 가격 비교", () -> { refreshCompare(); refreshHistory(); }));
     filters.add(frame.collectionButton());
     root.add(filters);
     root.add(scroll(compareTable, 145));
@@ -80,6 +81,7 @@ final class PriceTab extends TabView {
                 OfferRow row = compareRows.get(compareTable.convertRowIndexToModel(compareTable.getSelectedRow()));
                 compareDetails.setText(row.details());
                 updating = true;
+                historyProductId = row.product().id();
                 historyStore.setSelectedItem(row.offer().store());
                 historyBranch.setText(row.offer().branch());
                 updating = false;
@@ -154,7 +156,8 @@ final class PriceTab extends TabView {
       int view = compareTable.convertRowIndexToView(selected);
       compareTable.setRowSelectionInterval(view, view);
       compareDetails.setText(compareRows.get(selected).details());
-      if (previous == null && historyBranch.getText().equals("전체")) {
+      historyProductId = compareRows.get(selected).product().id();
+      if (!compareRows.get(selected).offer().key().equals(previous)) {
         historyStore.setSelectedItem(compareRows.get(selected).offer().store());
         historyBranch.setText(compareRows.get(selected).offer().branch());
       }
@@ -167,13 +170,14 @@ final class PriceTab extends TabView {
       clearHistory();
       return;
     }
+    String productId = historyProductId.isEmpty() ? chosen(priceProduct) : historyProductId;
     var r =
         prices.analyzePrices(
             m(
                 "mode",
                 "HISTORY",
                 "product_id",
-                chosen(priceProduct),
+                productId,
                 "store",
                 selected(historyStore),
                 "branch",
@@ -191,7 +195,7 @@ final class PriceTab extends TabView {
     for (var row : rows(r.get("rows")))
       addRow(historyTable, s(row, "date"), money(row.get("unit_price")));
     priceSummary.setText(
-        frame.repo.snapshot().product(chosen(priceProduct)).name() + " · " + selected(historyStore)
+        frame.repo.snapshot().product(productId).name() + " · " + selected(historyStore)
             + " / " + historyBranch.getText() + " · 관측 "
             + r.get("count")
             + "일 · 최저 "
@@ -201,7 +205,7 @@ final class PriceTab extends TabView {
             + " · 평균 "
             + money(r.get("mean"))
             + "원 / "
-            + unitLabel(frame.repo.snapshot().product(chosen(priceProduct))));
+            + unitLabel(frame.repo.snapshot().product(productId)));
     chart.setRows(rows(r.get("rows")));
   }
 
@@ -216,17 +220,24 @@ final class PriceTab extends TabView {
 
   private void useProductCondition() {
     if (priceProduct.getItemCount() == 0) return;
+    updating = true;
+    historyStore.setSelectedIndex(0);
+    historyBranch.setText("전체");
+    priceChannel.setSelectedItem("온라인");
+    priceCondition.setText("일반");
     frame.repo.snapshot().latest().stream()
         .filter(o -> o.productId().equals(chosen(priceProduct)))
         .findFirst().ifPresent(o -> {
-          updating = true;
           priceChannel.setSelectedItem(o.channel());
           priceCondition.setText(o.condition());
-          updating = false;
+          historyStore.setSelectedItem(o.store());
+          historyBranch.setText(o.branch());
         });
+    updating = false;
   }
 
   private void clearComparison() {
+    historyProductId = chosen(priceProduct);
     clear(compareTable);
     compareRows.clear();
     compareDetails.setText("상품과 판매 조건을 선택한 뒤 단위 가격 비교를 누르세요.");

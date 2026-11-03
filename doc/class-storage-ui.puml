@@ -37,10 +37,13 @@ class ProductTab {
 }
 class PriceTab {
   - prices : PriceService
+  - historyProductId : String
   - clearHistory()
 }
 class TargetTab {
   - targets : TargetService
+  - editingTargetId : String
+  - addFavorite()
 }
 LedgerFrame "1" *-- "5" TabView : owns screens
 TabView <|-- LedgerTab
