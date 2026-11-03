@@ -1,0 +1,45 @@
+PASS 1 canonical Homeplus URL removes tracking
+PASS 2 same SKU deduplicates alternate Costco paths
+PASS 3 lookalike host rejected
+PASS 4 plain HTTP rejected
+PASS 5 URL credentials rejected
+PASS 6 search URL cannot become a tracked product
+PASS 7 ambiguous duplicate SKU rejected
+PASS 8 live Homeplus structure yields deduplicated search links
+PASS 9 Costco links retain Korean text and reject off-site links
+PASS 10 changed search structure surfaces error
+PASS 11 multi-level package multiplication
+PASS 12 milk package total
+PASS 13 egg category keeps per-egg comparison
+PASS 14 mixed package needs explicit confirmation
+PASS 15 alternative package sizes are not guessed
+PASS 16 official total quantity works without title quantity
+PASS 17 detected package total cannot be changed to a false unit price
+PASS 18 new food category uses actual price per 100g
+PASS 19 explicit add stores a selected source
+PASS 20 registration saves observed price without inventing favorites
+PASS 21 duplicate registration is idempotent
+PASS 22 selection survives restart
+PASS 23 automatic collector reads saved user source instead of defaults
+PASS 24 source can be paused
+PASS 25 paused source performs no HTTP
+PASS 26 source can be resumed
+PASS 27 changed selection resets same-day automatic guard
+PASS 28 removal preserves historical prices
+PASS 29 intentionally empty collection does not restore starter defaults
+PASS 30 empty collection performs no HTTP
+PASS 31 late response cannot re-enable removed source
+PASS 32 concurrent setting change keeps next collection eligible
+PASS 33 changed identity keeps history but invalidates current price
+PASS 34 failed registration commits neither selection nor price
+PASS 35 old ledgers get starter defaults without migration
+PASS 36 persisted invalid source is rejected
+PASS 37 new drink quantities calculate per 100ml
+PASS 38 new count category uses per-item comparison
+PASS 39 missing quantity is explicit instead of guessed
+PASS 40 manual quantity confirmation rejects zero
+PASS 41 container capacity never becomes beverage content
+PASS 42 minimum order is not package size multiplier
+PASS 43 changed package can be re-registered with independent historical identity
+PASS 44 old specification history remains after re-registration
+Discovery tests: 44 passed, 0 failed

@@ -46,12 +46,18 @@ class OnlineCollectionService {
   + collect() : Map
 }
 interface ProductCollector {
-  + collect() : List<Result>
+  + collect(selected, progress) : List<Result>
 }
 class OnlineCatalog {
   - sources : List<Source>
-  + collect() : List<Result>
+  + collect(selected, progress) : List<Result>
 }
+class CollectionListService {
+  + list() : List<CollectionSource>
+  + add(verified) : Map
+  + change(key, action) : Map
+}
+Service <|-- CollectionListService
 Service <|-- OnlineCollectionService
 OnlineCollectionService "1" --> "1" ProductCollector : collector
 OnlineCollectionService "1" --> "0..1" TargetService : targets

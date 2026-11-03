@@ -1,5 +1,3 @@
-Version: 0.6.0-java-beta
-JAR SHA-256: acbb1e04ee12fd4798d79d3b9a17ebcd95ae95cdb83cb0832eb74dc84ee1366f
 PASS 1 no JSON file controls in customer UI
 PASS 2 collection action in all three relevant tabs
 PASS 3 fresh ledger has no invented prices

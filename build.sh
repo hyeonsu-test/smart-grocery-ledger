@@ -19,6 +19,8 @@ java -Dfile.encoding=UTF-8 -cp bin:test-bin sgl.ServiceTests > test-log/service-
 cat test-log/service-tests.log
 java -Dfile.encoding=UTF-8 -cp bin:test-bin sgl.CollectionTests > test-log/collection-tests.log 2>&1 || { cat test-log/collection-tests.log; exit 1; }
 cat test-log/collection-tests.log
+java -Dfile.encoding=UTF-8 -cp bin:test-bin sgl.DiscoveryTests > test-log/discovery-tests.log 2>&1 || { cat test-log/discovery-tests.log; exit 1; }
+cat test-log/discovery-tests.log
 java -Dfile.encoding=UTF-8 -jar SmartGroceryLedger.jar --smoke-test > test-log/jar-smoke.log 2>&1 || { cat test-log/jar-smoke.log; exit 1; }
 cat test-log/jar-smoke.log
 printf '%s\n' 'Built SmartGroceryLedger.jar and doc/api/index.html (Java 17+)'

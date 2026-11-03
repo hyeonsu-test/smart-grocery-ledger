@@ -1,4 +1,4 @@
-Version: 0.6.0-java-beta
-JAR SHA-256: acbb1e04ee12fd4798d79d3b9a17ebcd95ae95cdb83cb0832eb74dc84ee1366f
 PASS executable JAR: 5 services, write/reload, embedded Javadoc
 OS=Linux amd64 Java=17.0.17
+
+JAR SHA-256 8462a65b5f12811e2623b8f63695892559a23777705889deb51ed849762d92f1

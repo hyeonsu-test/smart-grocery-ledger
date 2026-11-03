@@ -8,7 +8,7 @@ import java.util.*;
 /** Shared validation, money and comparison rules. Monetary calculations use decimal arithmetic. */
 final class Data {
   static final List<String> STORES = List.of("이마트", "홈플러스", "코스트코");
-  static final List<String> CATEGORIES = List.of("우유", "계란", "라면", "쌀", "두부");
+  static final List<String> CATEGORIES = List.of("우유", "계란", "라면", "쌀", "두부", "음료", "기타 식품", "개수 상품");
   static final List<String> INCOME_CATEGORIES = List.of("용돈", "급여", "기타");
   static final List<String> EXPENSE_CATEGORIES = List.of("식료품", "외식", "교통", "주거", "기타");
   static final MathContext MC = MathContext.DECIMAL128;
@@ -112,11 +112,11 @@ final class Data {
   }
 
   static String unit(String c) {
-    return c.equals("우유") ? "ml" : c.equals("계란") ? "개" : c.equals("라면") ? "봉" : "g";
+    return c.equals("우유") || c.equals("음료") ? "ml" : c.equals("계란") || c.equals("개수 상품") ? "개" : c.equals("라면") ? "봉" : "g";
   }
 
   static BigDecimal unitBase(String c) {
-    return BigDecimal.valueOf(c.equals("계란") || c.equals("라면") ? 1 : 100);
+    return BigDecimal.valueOf(c.equals("계란") || c.equals("라면") || c.equals("개수 상품") ? 1 : 100);
   }
 
   static void conditions(Map<String, Object> r) {

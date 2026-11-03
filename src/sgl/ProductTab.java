@@ -45,7 +45,7 @@ final class ProductTab extends TabView {
 
   private JPanel productPage() {
     JPanel root =
-        page("상품과 가격 정보", "우유 · 계란 · 라면 · 쌀 · 두부 / 공식 온라인몰의 기본 수집 상품 / 앱 실행 시 하루 한 번 자동 갱신");
+        page("상품과 가격 정보", "원하는 상품을 검색해 자동 수집 목록에 추가하세요. 저장한 목록을 하루 한 번 자동 갱신합니다.");
     JPanel filters = flow();
     filters.add(filterCategory);
     filters.add(filterStore);
@@ -54,10 +54,19 @@ final class ProductTab extends TabView {
     promotionsOnly.addActionListener(e -> refreshProducts());
     filters.add(frame.button("상품 조회", this::refreshProducts));
     filters.add(frame.button("가격 직접 입력", this::manualDialog));
-    collectButton = frame.collectionButton();
-    filters.add(collectButton);
-    filters.add(frame.button("수집 결과", () -> frame.showText("상품 정보 수집 결과", collectionDetails)));
     root.add(filters);
+    JPanel collection=flow();
+    collection.add(frame.button("상품 검색 · 수집 목록", () -> {
+      if(frame.repo.snapshot().demo()) {
+        frame.status.setText("일반 모드에서 상품 검색과 자동 수집 목록을 사용할 수 있습니다.");
+        return;
+      }
+      new CollectionDialog(frame,new ProductDiscovery(frame.clock),new CollectionListService(frame.repo,frame.clock)).setVisible(true);
+    }));
+    collectButton = frame.collectionButton();
+    collection.add(collectButton);
+    collection.add(frame.button("수집 결과", () -> frame.showText("상품 정보 수집 결과", collectionDetails)));
+    root.add(collection);
     root.add(scroll(productTable, 270));
     productTable
         .getSelectionModel()
@@ -285,7 +294,7 @@ final class ProductTab extends TabView {
         try {
           var result = get();
           if (yes(result, "skipped")) {
-            frame.status.setText("오늘 자동 수집을 시도했습니다. 상품 정보 가져오기로 다시 수집할 수 있습니다.");
+            frame.status.setText(def(result,"message","오늘 자동 수집을 시도했습니다. 상품 정보 가져오기로 다시 수집할 수 있습니다."));
             return;
           }
           if (!List.of("OK", "PARTIAL_FAILURE", "REFRESH_FAILED").contains(s(result, "status"))) {

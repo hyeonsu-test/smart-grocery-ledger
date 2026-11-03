@@ -12,15 +12,15 @@ participant Site
 participant Repo
 participant Target
 UI -> Service : 1. collect()
-Service -> Repo : 2. snapshot()
-Service -> Collector : 3. collect()
-loop Each source
+Service -> Repo : 2. snapshot selected sources
+Service -> Collector : 3. collect(enabled sources)
+loop Each enabled source
 Collector -> Site : 4. HTTPS GET
 Site --> Collector : page / error
 Collector -> Collector : validate
 end
 Collector --> Service : 5. results
-Service -> Repo : 6. merge
+Service -> Repo : 6. recheck settings / merge
 Service -> Repo : 7. saveAtomic()
 Repo --> Service : OK / SAVE_FAILED
 alt Saved

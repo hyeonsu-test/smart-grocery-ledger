@@ -19,7 +19,7 @@ final class HttpPageClient {
       connection.setConnectTimeout(5000);
       connection.setReadTimeout(8000);
       connection.setInstanceFollowRedirects(false);
-      connection.setRequestProperty("User-Agent", "SmartGroceryLedger/0.6 (public product prices)");
+      connection.setRequestProperty("User-Agent", "SmartGroceryLedger/0.7 (public product prices)");
       connection.setRequestProperty("Accept", "text/html");
       connection.setUseCaches(false);
       try {

@@ -1,6 +1,4 @@
-Version: 0.6.0-java-beta
-JAR SHA-256: acbb1e04ee12fd4798d79d3b9a17ebcd95ae95cdb83cb0832eb74dc84ee1366f
-Smart Grocery Ledger Java regression tests | 2026-11-03T16:12:01.934046900+09:00
+﻿Smart Grocery Ledger Java regression tests | 2026-11-03T17:19:21.592253200+09:00
 OS=Windows 11 amd64 Java=21.0.9 | business clock=2026-11-02T12:00+09:00
 PASS JSON unicode escape and decimal round trip
 PASS JSON malformed duplicate keys trailing tokens rejected

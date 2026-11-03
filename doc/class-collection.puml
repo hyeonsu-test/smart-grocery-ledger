@@ -1,0 +1,59 @@
+@startuml
+!pragma layout smetana
+skinparam dpi 180
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam defaultFontName Arial
+skinparam defaultFontSize 17
+skinparam classBackgroundColor #FFFFFF
+skinparam classBorderColor #405862
+skinparam classHeaderBackgroundColor #EAF0F2
+skinparam ArrowColor #405862
+skinparam nodesep 35
+skinparam ranksep 45
+class CollectionDialog {
+  - discovery : ProductDiscovery
+  - settings : CollectionListService
+  - sources : List<CollectionSource>
+}
+class ProductDiscovery {
+  - reader : PageReader
+  + search(store, keyword) : List<Hit>
+  + inspect(url) : Preview
+  + confirm(preview, category, total) : Result
+}
+class CollectionListService {
+  + list() : List<CollectionSource>
+  + add(verified) : Map
+  + change(key, action) : Map
+}
+abstract class Service {
+  ~ repo : Repository
+}
+class Repository
+class AppState {
+  + collectionSources() : List<CollectionSource>
+}
+class CollectionSource <<record>> {
+  + product() : Product
+  + store() : String
+  + sku() : String
+  + url() : String
+  + enabled() : boolean
+}
+class Product <<record>>
+CollectionDialog "1" --> "1" ProductDiscovery : discovery
+CollectionDialog "1" --> "1" CollectionListService : settings
+CollectionDialog "1" --> "0..100" CollectionSource : sources
+Service <|-- CollectionListService
+Service "1" --> "1" Repository : repo
+Repository "1" *-- "1" AppState : current
+AppState "1" o-- "0..100" CollectionSource : settings (serialized)
+CollectionSource "1" --> "1" Product : product
+legend bottom
+  Selected-source settings are persisted with the ledger.
+  Starter entries apply only when the setting is absent.
+  Pause/remove retains product and observation history.
+  No dependency arrows. Existing classes show only relevant members.
+endlegend
+@enduml

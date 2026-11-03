@@ -8,7 +8,7 @@ import java.time.Clock;
 import java.util.*;
 import java.util.function.Consumer;
 
-/** Collects the built-in five-category catalog directly from official retailer pages. */
+/** Collects the user's selected catalog directly from official retailer pages. */
 public final class OnlineCatalog implements ProductCollector {
   @FunctionalInterface
   interface PageReader { String read(URI uri) throws IOException; }
@@ -33,6 +33,15 @@ public final class OnlineCatalog implements ProductCollector {
 
   @Override
   public List<Result> collect(Consumer<String> progress) {
+    return collectSources(sources,progress);
+  }
+
+  @Override
+  public List<Result> collect(List<CollectionSource> selected, Consumer<String> progress) {
+    return collectSources(selected.stream().filter(CollectionSource::enabled).map(CollectionSource::source).toList(),progress);
+  }
+
+  private List<Result> collectSources(List<Source> sources, Consumer<String> progress) {
     List<Result> result = new ArrayList<>();
     for (int i = 0; i < sources.size(); i++) {
       Source source = sources.get(i);

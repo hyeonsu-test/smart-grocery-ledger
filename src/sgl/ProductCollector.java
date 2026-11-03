@@ -13,6 +13,16 @@ public interface ProductCollector {
   List<Result> collect(Consumer<String> progress);
 
   /**
+   * Collects the user's enabled sources. Legacy injected collectors may ignore this selection.
+   * @param sources enabled persisted collection list
+   * @param progress progress callback
+   * @return independent results for attempted sources
+   */
+  default List<Result> collect(List<CollectionSource> sources, Consumer<String> progress) {
+    return collect(progress);
+  }
+
+  /**
    * A checked product specification and its current observation, or a source failure.
    * @param product verified catalog specification
    * @param store retailer name

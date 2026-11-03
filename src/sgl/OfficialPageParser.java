@@ -14,6 +14,25 @@ final class OfficialPageParser {
   private static final Pattern TYPE = Pattern.compile(
       "\\btype\\s*=\\s*['\"]application/ld\\+json['\"]", Pattern.CASE_INSENSITIVE);
 
+  static Map<String,Object> metadata(String sku,String html) {
+    List<Map<String,Object>> products=new ArrayList<>();
+    Matcher scripts=SCRIPT.matcher(html);
+    while(scripts.find()) if(TYPE.matcher(scripts.group(1)).find()) {
+      try { findProducts(Json.parse(scripts.group(2)),products); }
+      catch(IllegalArgumentException ignored) { }
+    }
+    var matches=products.stream().filter(p -> def(p,"sku",s(p,"mpn")).equals(sku)).toList();
+    if(matches.size()!=1)throw new IllegalArgumentException("상품 상세 정보와 ID를 확인할 수 없습니다. 옵션 상품은 개별 상품 주소를 사용하세요.");
+    return matches.get(0);
+  }
+
+  static Map<String,Object> homeplusDetail(String html) {
+    Matcher scripts=SCRIPT.matcher(html);
+    while(scripts.find()) if(scripts.group(1).contains("/item/getItemDetail.json"))
+      return obj(obj(obj(Json.parse(scripts.group(2))).get("data")).get("item"));
+    return m();
+  }
+
   static PriceObservation parse(OnlineCatalog.Source source, String html, Clock clock) {
     List<Map<String, Object>> products = new ArrayList<>();
     Map<String, Object> detail = null;
@@ -37,6 +56,10 @@ final class OfficialPageParser {
       }
     }
     if (match == null) throw new IllegalArgumentException("상품 ID·이름·규격을 확인할 수 없습니다.");
+    var measured=ProductDiscovery.quantity(source.product().name(),detail==null?m():detail);
+    if(measured!=null && (!unit(measured.category()).equals(source.product().unit())
+        || measured.total().compareTo(source.product().size().multiply(BigDecimal.valueOf(source.product().packCount())))!=0))
+      throw new IllegalArgumentException("판매 묶음 규격이 변경되었습니다. 상품 정보를 다시 확인하세요.");
     List<Map<String, Object>> offers = new ArrayList<>();
     Object rawOffers = match.get("offers");
     if (rawOffers instanceof Map<?, ?>) offers.add(obj(rawOffers));
@@ -55,6 +78,9 @@ final class OfficialPageParser {
       if (detail == null) throw new IllegalArgumentException("상품 판매 상태 응답이 없습니다.");
       var basic = obj(detail.get("basic"));
       var sale = obj(detail.get("sale"));
+      var options=detail.get("opt")==null?m():obj(detail.get("opt"));
+      if(s(options,"optSelUseYn").equals("Y") || s(options,"groupUseYn").equals("Y"))
+        throw new IllegalArgumentException("옵션 선택 상품입니다. 고정 규격의 개별 상품 주소를 사용하세요.");
       String expectedType = source.uri().getQuery().contains("storeType=EXP") ? "EXP" : "HYPER";
       if (!source.sku().equals(s(basic, "itemNo")) || !expectedType.equals(s(basic, "storeType"))
           || !normalized(s(basic, "itemNm")).equals(normalized(source.product().name())))
@@ -72,6 +98,8 @@ final class OfficialPageParser {
       if (price.compareTo(actual) != 0) throw new IllegalArgumentException("표시 가격과 판매 가격 불일치");
       branch = (expectedType.equals("EXP") ? "익스프레스" : "대형마트")
           + " · 공개 기준점포 " + integer(basic.get("storeId"), false);
+      if(sale.get("purchaseMinQty")!=null && integer(sale.get("purchaseMinQty"),true)>1)
+        condition += " · 최소 " + integer(sale.get("purchaseMinQty"),false) + "개 구매";
       for (var event : rows(sale.get("eventList"))) {
         if (s(event, "eventKind").equals("BASIC")
             && num(event.get("changeAmount"), true).compareTo(price) == 0
@@ -82,6 +110,8 @@ final class OfficialPageParser {
         }
       }
     } else if (source.store().equals("코스트코")) {
+      Matcher minimum=Pattern.compile("최소\\s*구매\\s*([0-9]+)").matcher(source.product().name());
+      if(minimum.find()) condition += " · 최소 " + minimum.group(1) + "개 구매";
       if (availability.isEmpty()) throw new IllegalArgumentException("재고 상태를 확인할 수 없습니다.");
       if (!s(offer, "priceValidUntil").isEmpty()
           && LocalDate.parse(day(offer.get("priceValidUntil"))).isBefore(LocalDate.now(clock)))

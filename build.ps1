@@ -37,6 +37,7 @@ if (!$SkipTests) {
     Copy-Item -LiteralPath 'test/fixtures/legacy-ledger-v1.json' -Destination 'test-bin/legacy-ledger-v1.json'
     Invoke-Jdk java @('-Dfile.encoding=UTF-8','-cp','bin;test-bin','sgl.ServiceTests') 'test-log/service-tests.log'
     Invoke-Jdk java @('-Dfile.encoding=UTF-8','-cp','bin;test-bin','sgl.CollectionTests') 'test-log/collection-tests.log'
+    Invoke-Jdk java @('-Dfile.encoding=UTF-8','-cp','bin;test-bin','sgl.DiscoveryTests') 'test-log/discovery-tests.log'
     Invoke-Jdk java @('-Dfile.encoding=UTF-8','-jar','SmartGroceryLedger.jar','--smoke-test') 'test-log/jar-smoke.log'
 }
 Write-Host 'Built SmartGroceryLedger.jar and doc/api/index.html (Java 17+)'

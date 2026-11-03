@@ -38,20 +38,28 @@ public final class OnlineCollectionService extends Service {
     if (!running.compareAndSet(false, true)) return m("status", "BUSY");
     try {
       String today = LocalDate.now(clock).toString();
+      List<CollectionSource> requested;
       synchronized (repo) {
         if (!repo.readError().isEmpty()) return m("status", "READ_FAILED", "message", repo.readError());
         if (repo.snapshot().demo()) return ok("skipped", true, "message", "시연 모드에서는 실제 가격을 섞지 않습니다.");
         if (automatic && repo.snapshot().value("online_attempt").equals(today))
           return ok("skipped", true);
+        requested=repo.snapshot().collectionSources();
       }
-      List<ProductCollector.Result> results = collector.collect(progress);
+      if(requested.stream().noneMatch(CollectionSource::enabled))
+        return ok("skipped",true,"message","자동 수집할 상품이 없습니다. 수집 목록에서 상품을 추가하거나 켜세요.");
+      List<ProductCollector.Result> results = collector.collect(requested.stream().filter(CollectionSource::enabled).toList(),progress);
       if (results.isEmpty()) return m("status", "REFRESH_FAILED", "message", "수집 대상이 없습니다.");
       synchronized (repo) {
         AppState candidate = repo.snapshot();
         int count = 0;
         Set<String> updated = new LinkedHashSet<>();
         Map<String, Object> failures = m(), details = m();
+        Map<String,CollectionSource> active=new HashMap<>();
+        for(var source:candidate.collectionSources())if(source.enabled())active.put(source.key(),source);
         for (var result : results) {
+          CollectionSource selected=active.get(CollectionSource.keyOf(result.url()));
+          if(selected==null || !selected.product().equals(result.product()))continue;
           var detail = obj(details.computeIfAbsent(result.store(),
               k -> m("success", 0, "failed_count", 0, "errors", m())));
           if (result.observation() == null) {
@@ -77,7 +85,7 @@ public final class OnlineCollectionService extends Service {
           if (integer(detail.get("success"), true) > 0) status.put("last_success", now().toString());
           candidate.map("sources").put(entry.getKey(), status);
         }
-        candidate.put("online_attempt", today);
+        if(requested.equals(candidate.collectionSources()))candidate.put("online_attempt", today);
         var saved = repo.saveAtomic(candidate);
         if (!s(saved, "status").equals("OK")) return saved;
         Map<String, Object> targetResult = null;

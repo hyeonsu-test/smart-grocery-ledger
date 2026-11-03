@@ -157,7 +157,26 @@ public final class AppState {
     return yes(data, "demo");
   }
 
+  List<CollectionSource> collectionSources() {
+    if (!data.containsKey("collection_sources")) return OnlineCatalog.defaults().stream()
+        .map(s -> new CollectionSource(s.product(),s.store(),s.sku(),s.uri().toString(),true)).toList();
+    return rows(data.get("collection_sources")).stream().map(CollectionSource::fromMap).toList();
+  }
+
+  void collectionSources(List<CollectionSource> sources) {
+    data.put("collection_sources",new ArrayList<>(sources.stream().map(CollectionSource::toMap).toList()));
+    data.put("online_attempt","");
+  }
+
   void validate() {
+    Set<String> sourceKeys = new HashSet<>();
+    if (collectionSources().size() > 100) throw new IllegalArgumentException("자동 수집 목록은 최대 100개입니다.");
+    for (var source : collectionSources()) {
+      if (!sourceKeys.add(source.key())) throw new IllegalArgumentException("중복 수집 상품");
+      Product existing=catalog.get(source.product().id());
+      if (existing!=null && !existing.equals(source.product())) throw new IllegalArgumentException("수집 상품 규격 불일치");
+    }
+    if (!value("online_attempt").isEmpty()) day(value("online_attempt"));
     if (integer(data.get("version"), false) != 1)
       throw new IllegalArgumentException("지원하지 않는 데이터 버전입니다.");
     for (String k : List.of("budgets", "plans", "targets", "alerts", "sources", "feed_paths"))

@@ -1,5 +1,3 @@
-Version: 0.6.0-java-beta
-JAR SHA-256: acbb1e04ee12fd4798d79d3b9a17ebcd95ae95cdb83cb0832eb74dc84ee1366f
 PASS tabs, tables, headers, controls and text inputs share the smoothed UI font
 PASS actual tab header uses bundled Korean typeface and bundled bold face is available
 PASS five Swing use-case screens

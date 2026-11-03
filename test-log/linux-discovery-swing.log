@@ -1,0 +1,18 @@
+PASS 1 product tab exposes search and collection settings
+PASS 2 explicit empty list remains empty in UI
+PASS 3 search results do not silently register products
+PASS 4 add stays disabled before detail confirmation
+PASS 5 preview displays normalized full-package quantity
+PASS 6 known official quantity cannot be accidentally edited
+PASS 7 preview alone does not change saved collection
+PASS 8 explicit add saves source and fetched price
+PASS 9 registered source appears in collection manager
+PASS 10 registered price reaches product screen
+PASS 11 pause button persists disabled setting
+PASS 12 paused UI source is not fetched
+PASS 13 enable setting survives restart
+PASS 14 UI removal preserves observations
+PASS 15 detail fetch runs asynchronously
+PASS 16 closing pending preview cannot add a source
+PASS 17 closing manager leaves main application running
+Discovery Swing tests: 17 passed, 0 failed

@@ -1,9 +1,9 @@
 {
-  "version": "0.6.0-java-beta",
+  "version": "0.7.0-java-beta",
   "built_for_java": 17,
   "build_jdk": "Temurin 21.0.9",
-  "jar_sha256": "acbb1e04ee12fd4798d79d3b9a17ebcd95ae95cdb83cb0832eb74dc84ee1366f",
-  "recorded_at": "2026-11-03T16:15:31.519022+09:00",
+  "jar_sha256": "8462a65b5f12811e2623b8f63695892559a23777705889deb51ed849762d92f1",
+  "recorded_at": "2026-11-03T17:20:42.292845+09:00",
   "service_tests": 61,
   "swing_checks": 58,
   "verified_platforms": [
@@ -15,7 +15,7 @@
     "macOS"
   ],
   "native_screenshots": 0,
-  "swing_component_renders": 5,
+  "swing_component_renders": 7,
   "javadoc_renders": 2,
   "archived_native_screenshots": {
     "version": "0.5.0",
@@ -38,7 +38,7 @@
     ],
     "capture": "actual JTabbedPane, five selected states per scale",
     "regular_sha256": "53750379270312368cf7641901f43a98dd892e3d9d5798cf25cdc245c85c71c0",
-    "scales_verified_in_version": "0.5.2; same font and tab renderer in 0.6.0"
+    "scales_verified_in_version": "0.5.2; same font and tab renderer in 0.7.0"
   },
   "collection_tests": 32,
   "collection_swing_checks": 18,
@@ -52,5 +52,24 @@
       "failed": 1
     },
     "blocked": "이마트 HTTP 403"
+  },
+  "discovery_tests": 44,
+  "discovery_swing_checks": 17,
+  "live_discovery": {
+    "Windows": {
+      "searches": 3,
+      "added": 6,
+      "recurring_success": 6
+    },
+    "Linux": {
+      "searches": 3,
+      "added": 6,
+      "recurring_success": 6
+    },
+    "keywords": [
+      "생수",
+      "커피",
+      "과자"
+    ]
   }
 }

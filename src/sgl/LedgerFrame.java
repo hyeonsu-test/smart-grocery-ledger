@@ -16,7 +16,7 @@ import javax.swing.event.*;
 import javax.swing.table.*;
 
 /**
- * Swing UI01-UI05. User edits stay in forms until explicit save; feed reads use SwingWorker.
+ * Swing UI01-UI05. User edits stay in forms until explicit save; online reads use SwingWorker.
  *
  * @serial exclude
  */
@@ -43,7 +43,7 @@ public final class LedgerFrame extends JFrame {
    *
    * @param repository shared storage
    * @param clock time source
-   * @param autoRefresh enables daily configured-feed refresh while the app runs
+   * @param autoRefresh enables daily selected-product refresh while the app runs
    */
   public LedgerFrame(Repository repository, Clock clock, boolean autoRefresh) {
     this(repository, clock, autoRefresh, new OnlineCatalog(clock));

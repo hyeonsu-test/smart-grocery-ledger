@@ -28,15 +28,21 @@
  * <p>Application state holds immutable {@link sgl.Product} and {@link sgl.PriceObservation}
  * records. The five tabs own their controls and editing state. Version 1 JSON files, local feeds
  * and map-based service requests use the following wire fields. A product contains id, category,
- * name, brand, spec, size, unit and pack_count. Categories are 우유, 계란, 라면, 쌀, 두부. Units are
- * respectively ml, 개, 봉, g, g. An offer contains product_id, store, branch, channel, price,
+ * name, brand, spec, size, unit and pack_count. Categories include 우유/ml, 계란/개, 라면/봉, 쌀/g, 두부/g, 음료/ml,
+ * 기타 식품/g and 개수 상품/개. An offer contains product_id, store, branch, channel, price,
  * condition, url, checked_date, checked_at, start and end. Optional checked_at may be empty, which
  * excludes the price from current comparisons. Store names are 이마트, 홈플러스, 코스트코. The channel is 온라인
  * or 오프라인. Prices are published package totals before unit conversion. Costco prices require
  * membership and include delivery; these conditions are retained, not silently normalized away.
- * {@link sgl.OnlineCollectionService} fetches the built-in catalog via {@link sgl.OnlineCatalog}
+ * {@link sgl.OnlineCollectionService} fetches enabled {@link sgl.CollectionSource} settings via {@link sgl.OnlineCatalog}
  * on startup once per day, or on the collection button. Homeplus and Costco public product pages
- * are supported; inaccessible sources are reported independently. No user-supplied feed file is
+ * are supported; inaccessible sources are reported independently.
+ * {@link sgl.ProductDiscovery} searches live catalogs and previews the selected detail page.
+ * {@link sgl.CollectionListService} persists only explicitly confirmed registrations.
+ * Legacy ledgers start with eight editable sources; an explicitly empty list stays empty.
+ * Pausing or removing a source retains historical observations and ledger entries.
+ * The list supports at most 100 sources and each search returns at most 40 results.
+ * Unknown package quantities require confirmation before registration; prices are never invented. No user-supplied feed file is
  * needed. {@link sgl.MartAdapter} remains a legacy local-snapshot API, without a customer UI.
  *
  * <p>Product queries include catalog-only products with null price and unit_price when source

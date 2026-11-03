@@ -1,69 +1,78 @@
 # 빌드와 검증
 
-Java 17 이상의 JDK에서 프로젝트 최상위 폴더를 열고 다음 명령을 실행하세요. 빌드 스크립트가 Java 소스와 테스트를 컴파일하고, Javadoc을 생성하고, 실행 JAR를 만든 뒤 서비스 검사와 JAR 실행 검사를 수행합니다.
+Java 17 이상의 JDK에서 프로젝트 폴더를 열고 빌드하세요. 소스·테스트를 컴파일하고 Javadoc과 실행 JAR를 생성한 뒤 서비스·수집·검색 검사와 JAR 검사를 실행합니다.
 
-**Windows PowerShell**
+## 실행 명령
 
-```powershell
+Windows PowerShell:
+
+~~~powershell
 .\build.ps1
 java -cp "bin;test-bin" sgl.UiSmokeTests
-```
+java -cp "bin;test-bin" sgl.CollectionUiTests
+java -cp "bin;test-bin" sgl.DiscoveryUiTests
+~~~
 
-**Linux 또는 macOS 셸**
+Linux 또는 macOS:
 
-```sh
+~~~sh
 sh build.sh
 java -cp "bin:test-bin" sgl.UiSmokeTests
-```
+java -cp "bin:test-bin" sgl.CollectionUiTests
+java -cp "bin:test-bin" sgl.DiscoveryUiTests
+~~~
 
-Swing 검사를 실행하려면 그래픽 화면이 필요합니다. JAR만 받은 경우에는 다음 명령으로 화면을 열지 않고 서비스 다섯 개, 임시 파일 저장과 재읽기, 내장 Javadoc 자원을 확인할 수 있습니다.
+Swing 검사는 그래픽 화면이 필요합니다. JAR만 받은 경우 화면 없이 저장·재읽기·내장 Javadoc을 확인할 수 있습니다.
 
-```sh
+~~~sh
 java -jar SmartGroceryLedger.jar --smoke-test
-```
+~~~
 
-## 0.6.0 실행 결과
+## 0.7.0 검증 결과
 
-| 환경 | 확인한 동작 | 실행 로그 |
-|---|---|---|
-| Windows 11 · Java 21.0.9 | 서비스 61개와 Swing 58항목 통과. JAR의 다섯 탭 실행 확인 | [서비스](../test-log/service-tests.log) · [Swing](../test-log/swing-actions.log) · [JAR](../test-log/jar-smoke.log) |
-| Windows 11 · Java 26 | 배포 JAR의 서비스·저장·재읽기 검사 통과 | [JAR](../test-log/windows-java26-jar.log) |
-| Ubuntu 26.04 · WSL2 · Java 17.0.17 | 서비스 61개·수집 32개, WSLg 화면에서 Swing 58항목·수집 UI 18항목과 동일 배포 JAR 검사 통과 | [서비스](../test-log/linux-service-tests.log) · [Swing](../test-log/linux-swing-actions.log) · [JAR](../test-log/linux-jar-smoke.log) |
+| 환경 | 확인한 범위 |
+|---|---|
+| Windows 11 / Temurin Java 21.0.9 | 서비스 61, 수집 32, 검색·목록 44, 기존 Swing 58, 수집 UI 18, 검색·목록 UI 17 모두 통과 |
+| Ubuntu 26.04 / WSL2 / Java 17.0.17 | 동일 항목 통과, WSLg 화면 검사와 같은 배포 JAR 실행 |
+| Windows 11 / Oracle Java 26 | 같은 배포 JAR의 서비스·저장·재읽기·내장 Javadoc 검사 통과 |
 
-macOS 실행은 미검증입니다. 배포 JAR의 SHA-256은 `acbb1e04ee12fd4798d79d3b9a17ebcd95ae95cdb83cb0832eb74dc84ee1366f`입니다. [배포 정보](../release-manifest.json)
+macOS 실행은 미검증입니다. JAR SHA-256은 `8462a65b5f12811e2623b8f63695892559a23777705889deb51ed849762d92f1`입니다. [배포 정보](../release-manifest.json)
 
-이전 버전에서 생성한 가계부를 열어 상품 규격, 가격, 시간대, 거래, 예산을 저장 후 다시 읽는 검사도 포함합니다. 반복소수 단가를 화면에 표시하고 정렬하는 경로, 상품 탭에서 가계부 탭으로 이동해 저장할 때 지출이 한 번만 생기는 경로를 확인합니다. [호환성 검사 자료](../test/fixtures/legacy-ledger-v1.json)
+[Windows 서비스](../test-log/service-tests.log) · [수집](../test-log/collection-tests.log) · [검색·목록](../test-log/discovery-tests.log) · [기존 UI](../test-log/swing-actions.log) · [수집 UI](../test-log/collection-swing.log) · [검색·목록 UI](../test-log/discovery-swing.log)
 
-서비스 검사는 독립된 임시 폴더에서 실제 저장, 저장 실패 시 복구, 월 이동, 가격 유효 기간, 단위 환산, 목표 알림의 재실행 중복 방지를 확인합니다. Swing 검사는 저장 버튼, 장보기 초안, 미저장 입력과 피드 갱신 후 상품 목록 반영을 확인합니다. 실패가 있으면 검사 프로세스가 종료 코드 1을 반환합니다. [서비스 검사 코드](../test/sgl/ServiceTests.java) · [화면 검사 코드](../test/sgl/UiSmokeTests.java)
+[Linux 서비스](../test-log/linux-service-tests.log) · [수집](../test-log/linux-collection-tests.log) · [검색·목록](../test-log/linux-discovery-tests.log) · [기존 UI](../test-log/linux-swing-actions.log) · [수집 UI](../test-log/linux-collection-swing.log) · [검색·목록 UI](../test-log/linux-discovery-swing.log) · [JAR](../test-log/linux-jar-smoke.log)
 
-0.6.0 검사는 수입·지출 분류, 외식의 거래처, 상품 구매에만 적용되는 수량, 식료품 예산과 외식의 구분을 확인합니다. 가격 없는 상품의 조회·계획·결제 입력, 현재 행사 필터, 직접 입력과 피드의 독립 보존, 비교 상품·지점 변경 시 이전 이력 초기화, 초안 이동 취소, 빈 목표 화면, 숫자 정렬도 포함합니다.
+## 실제 온라인 검색과 재수집
 
-## 디렉터리와 API 문서
+2026년 11월 3일 Windows와 Linux에서 같은 수집 코드를 사용해 공식 온라인몰에 요청했습니다. 기본 8개 중 홈플러스 4개·코스트코 3개를 수집했고 이마트 1개는 HTTP 403으로 실패했습니다.
+
+별도로 빈 수집 목록에서 생수·커피·과자를 검색했습니다. 홈플러스 생수 20개·과자 20개, 코스트코 커피 40개 결과를 받았으며 그중 각 2개씩 총 6개를 등록했습니다. 저장 파일을 다시 읽은 뒤 6개 모두 가격을 다시 수집했습니다. 용량이 불명확한 결과는 자동 등록하지 않았습니다. 검색어·시각·재고·공개 응답에 따라 결과는 달라질 수 있습니다.
+
+[Windows 기본 수집](../test-log/live-windows.log) · [Linux 기본 수집](../test-log/live-linux.log) · [Windows 검색·재수집](../test-log/discovery-live-windows.log) · [Linux 검색·재수집](../test-log/discovery-live-linux.log)
+
+검색은 홈플러스 익스프레스·코스트코를 지원합니다. 홈플러스 대형마트는 상세 주소로 등록합니다. 검색 결과는 최대 40개, 저장 목록은 최대 100개입니다. 전체 온라인몰의 상품을 모두 가져오거나 앱 종료 중 수집하지는 않습니다. 가격 이력은 실제 관측일부터 쌓입니다.
+
+## 검사 범위
+
+기존 검사는 수입·외식·식료품의 구분, 상품 구매 수량, 예산·장보기, 가격 미확정, 단위 환산, 기간·조건·출처별 가격 유효성, 목표 알림 중복 방지, 저장 실패 및 기존 파일 호환을 다룹니다. 수집 검사는 상품 ID·이름·원화·재고·행사·회원 조건과 부분 실패·재시도·수집 중 동시 저장을 확인합니다.
+
+새 검색·목록 검사는 공식 주소 정규화, 유사 도메인 거부, 실제 검색 응답 형식, 묶음 용량 환산, 불명확한 용량, 최소 주문 조건, 용기와 음료의 구분, 명시적 등록·중복 방지·재실행 복원·중지·재개·삭제를 확인합니다. 목록을 비운 뒤 기본 항목이 다시 생기지 않는지, 수집 중 삭제한 상품의 늦은 응답이 저장되지 않는지, 상품 규격 변경 시 새 ID로 등록하고 이력을 보존하는지도 포함합니다. UI 검사는 검색·미리보기만으로 저장되지 않는지와 비동기 확인 중 창을 닫아도 등록되지 않는지 확인합니다.
+
+[서비스 검사](../test/sgl/ServiceTests.java) · [수집 검사](../test/sgl/CollectionTests.java) · [검색·목록 검사](../test/sgl/DiscoveryTests.java) · [검색·목록 UI 검사](../test/sgl/DiscoveryUiTests.java)
+
+## 디렉터리와 API
 
 | 경로 | 내용 |
 |---|---|
-| `src/sgl/`, `test/sgl/` | 앱과 테스트의 Java 소스 |
-| `bin/`, `test-bin/` | 빌드가 생성하는 앱과 테스트 클래스 |
-| `lib/`, `resources/` | 라이브러리 안내, 예시 피드, 빌드가 생성하는 Javadoc 압축 파일 |
-| `doc/api/`, `doc/screenshots/`, `test-log/` | 생성된 API 문서, 시연 화면, 테스트 로그 |
+| `src/sgl/`, `test/sgl/` | 앱과 테스트 Java 소스 |
+| `bin/`, `test-bin/` | 컴파일 결과 |
+| `lib/`, `resources/` | 라이브러리 안내, 글꼴·라이선스, 호환 예시와 내장 Javadoc |
+| `doc/api/`, `doc/screenshots/`, `test-log/` | API HTML, 실행 화면, 실제 테스트 로그 |
 
-Javadoc은 빌드 후 `doc/api/index.html`에서 열거나, 실행 중인 앱 상단의 **Javadoc API 매뉴얼** 버튼으로 열 수 있습니다. 빌드는 Java 17을 대상으로 하며 컴파일과 Javadoc 경고를 오류로 처리합니다. [빌드 스크립트](../build.ps1) · [API 개요 화면](screenshots/api/06-javadoc-overview.png)
+Javadoc은 빌드 후 `doc/api/index.html` 또는 앱의 **Javadoc API 매뉴얼** 버튼으로 여세요. javac는 `--release 17 -Xlint:all,-serial -Werror`, javadoc은 `-Xdoclint:all -Werror`로 검사합니다.
 
-`doc/screenshots/native`에는 0.5.0 시연 창의 원본 캡처가, `doc/screenshots/rendered`에는 0.6.0 Swing 컴포넌트를 고해상도로 출력한 이미지가 있습니다. 01·02와 native 폴더는 가상 시연 자료이며, rendered의 03·04·05는 2026-11-03 실제 수집 가격입니다. 05의 개인 목표 330원/100ml는 화면 설명을 위한 설정 예시입니다. [0.5.0 실행 창](screenshots/native/01-ledger.png) · [장보기 화면](screenshots/rendered/02-budget.png)
+rendered의 01·02는 가상 시연 자료, 03·04·05·08·09는 실제 수집·검색으로 실행한 Swing 컴포넌트 출력입니다. 05의 개인 목표 330원/100ml는 설정 예시입니다. native 폴더와 탭 배율 비교는 이전 버전의 보관 자료입니다. 새 보고서에는 실제 검색 화면과 목록을 포함합니다.
 
-0.5.2 글꼴 수정 때 Windows에서 0.5.1과 0.5.2 JAR를 별도 빈 폴더로 실행하고 실제 탭 막대를 100%, 125%, 150%, 200% 배율에서 비교했습니다. 각 배율에서 다섯 탭을 차례로 선택해 제목이 한 줄 안에 들어가는지 확인했습니다. 0.6.0에도 같은 탭 렌더러와 글꼴을 사용합니다. 탭은 JAR 안의 IBM Plex Sans KR Regular를 16pt로 사용합니다. [150% 실제 탭 비교](screenshots/tab-comparison.png)
+[상품 검색](screenshots/rendered/08-discovery.png) · [수집 목록](screenshots/rendered/09-collection-list.png) · [API 개요](screenshots/api/06-javadoc-overview.png)
 
-IBM Plex Sans KR의 일반·굵은 글꼴 파일과 배포 조건은 실행 JAR의 fonts 폴더에 들어 있습니다. [배포 라이선스](../resources/fonts/OFL.txt) · [원본 버전과 해시](../resources/fonts/SOURCE.txt)
-
-
-## 공식 상품 수집 검증
-
-Windows Java 21과 Ubuntu Java 17에서 같은 JAR로 인터넷에 직접 요청했다. 홈플러스 4개·코스트코 3개의 양수 가격과 상품 규격을 받아 단위 가격 비교까지 통과했다. 이마트 1개는 HTTP 403으로 실패했으며 결과에 그대로 표시한다. 수집 범위는 내장 목록 8개이며 마트 전체 카탈로그 검색은 지원하지 않는다.
-
-[Windows 실제 수집 로그](../test-log/live-windows.log) · [Linux 실제 수집 로그](../test-log/live-linux.log)
-
-오프라인 수집 검사 32개는 상품 ID·이름 불일치, 원화·가격 불일치, 품절, 조건부 카드 할인, 행사 기간, 회원 가격, 시간 초과, 부분 실패, 이력 보존, 재시도, 당일 자동 시도 제한, 수집 중 별도 저장, 저장 실패와 재실행을 검사한다. Swing 검사 18개는 파일 입력 없이 자동 수집, 03·04·05 버튼, 중복 요청 방지, 04 이력 반영과 05 관심 상품 추가를 확인한다.
-
-[수집 검사 코드](../test/sgl/CollectionTests.java) · [수집 화면 검사](../test/sgl/CollectionUiTests.java) · [수집 검사 로그](../test-log/collection-tests.log) · [수집 화면 로그](../test-log/collection-swing.log)
-
-독립 실행: java -cp "bin;test-bin" sgl.CollectionTests 및 java -cp "bin;test-bin" sgl.CollectionUiTests. Linux에서는 클래스 경로 구분자를 콜론으로 바꾼다. 테스트는 임시 가계부를 사용하며 개인 가계부를 수정하지 않는다.
+IBM Plex Sans KR Regular·Bold 글꼴과 OFL 배포 조건은 JAR 안에 있습니다. 탭은 16pt이며 0.5.2에서 100%·125%·150%·200% 배율을 확인한 렌더러를 유지합니다. [라이선스](../resources/fonts/OFL.txt) · [원본과 해시](../resources/fonts/SOURCE.txt)

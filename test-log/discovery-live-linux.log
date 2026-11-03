@@ -1,0 +1,18 @@
+SEARCH 홈플러스 익스프레스 / 생수 = 20
+ADDED 동원 웨이크업 뷰티 무라벨 2.0L | 590 | 2000.0ml | https://mfront.homeplus.co.kr/item?itemNo=071445477&storeType=EXP
+ADDED 농심 백산수 2L | 980 | 2000.0ml | https://mfront.homeplus.co.kr/item?itemNo=121581129&storeType=EXP
+SEARCH 코스트코 / 커피 = 40
+NEEDS QUANTITY 커클랜드 시그니춰 콜럼비아 그라운드 커피
+ADDED 카누 라떼 커피 13.5g x 50스틱 x 2박스 | 43490.0 | 1350.0g | https://www.costco.co.kr/Foods/CoffeeTeaDrink/Instant-Coffee/Kanu-Latte-Coffee-135g-x-50sticks-x-2/p/611167
+ADDED 스타벅스 카페 베로나 홀빈 커피 1.13kg | 46990.0 | 1130.00g | https://www.costco.co.kr/Foods/CoffeeTeaDrink/Whole-BeansGround-Coffee/Starbucks-Caffe-Verona-Whole-Bean-Coffee-113kg/p/408462
+SEARCH 홈플러스 익스프레스 / 과자 = 20
+ADDED 해태 홈런볼 초코 41G*4입 | 4990 | 164.0g | https://mfront.homeplus.co.kr/item?itemNo=104228667&storeType=EXP
+ADDED 프링글스 양파맛 110G | 3590 | 110.0g | https://mfront.homeplus.co.kr/item?itemNo=112436925&storeType=EXP
+REFRESH 1/6 · 홈플러스 · 동원 웨이크업 뷰티 무라벨 2.0L
+REFRESH 2/6 · 홈플러스 · 농심 백산수 2L
+REFRESH 3/6 · 코스트코 · 카누 라떼 커피 13.5g x 50스틱 x 2박스
+REFRESH 4/6 · 코스트코 · 스타벅스 카페 베로나 홀빈 커피 1.13kg
+REFRESH 5/6 · 홈플러스 · 해태 홈런볼 초코 41G*4입
+REFRESH 6/6 · 홈플러스 · 프링글스 양파맛 110G
+AFTER RESTART {"status":"OK","successful":6,"failed":0,"failures":{},"sources":{"홈플러스":{"success":4,"failed_count":0,"errors":{}},"코스트코":{"success":2,"failed_count":0,"errors":{}}},"target_result":{"status":"OK","items":[],"notifications":[]}}
+PASS real search, explicit registration, restart and recurring collection

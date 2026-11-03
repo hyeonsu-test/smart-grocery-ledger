@@ -1,6 +1,9 @@
 src/sgl/AppState.java
 src/sgl/BudgetService.java
 src/sgl/BudgetTab.java
+src/sgl/CollectionDialog.java
+src/sgl/CollectionListService.java
+src/sgl/CollectionSource.java
 src/sgl/Data.java
 src/sgl/DemoData.java
 src/sgl/HttpPageClient.java
@@ -20,6 +23,7 @@ src/sgl/PriceService.java
 src/sgl/PriceTab.java
 src/sgl/Product.java
 src/sgl/ProductCollector.java
+src/sgl/ProductDiscovery.java
 src/sgl/ProductService.java
 src/sgl/ProductTab.java
 src/sgl/Repository.java

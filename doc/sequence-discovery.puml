@@ -1,0 +1,33 @@
+@startuml
+skinparam dpi 180
+skinparam defaultFontName Arial
+skinparam defaultFontSize 17
+skinparam shadowing false
+hide footbox
+actor User
+participant Dialog
+participant Discovery
+participant Site
+participant ListService
+participant Repo
+User -> Dialog : Search keyword
+Dialog -> Discovery : search(store, keyword)
+Discovery -> Site : GET search page
+Site --> Discovery : result links
+Discovery --> Dialog : List<Hit>
+User -> Dialog : Confirm selected product
+Dialog -> Discovery : inspect(url)
+Discovery -> Site : GET detail page
+Site --> Discovery : identity / package / price
+Discovery --> Dialog : Preview (not saved)
+User -> Dialog : Add to automatic collection
+Dialog -> Discovery : confirm(preview, quantity)
+Discovery --> Dialog : verified Result
+Dialog -> ListService : add(result)
+ListService -> Repo : saveAtomic(product, price, settings)
+Repo --> Dialog : save result
+note over User,Repo
+Next startup / refresh collects enabled sources.
+Search and preview alone do not register products.
+end note
+@enduml

@@ -9,7 +9,7 @@
 | 창 | [LedgerFrame](../src/sgl/LedgerFrame.java) | 다섯 탭 구성, 이동·종료 확인, 공통 월과 새 가격 반영 |
 | 가계부 | [LedgerTab](../src/sgl/LedgerTab.java) | 수입·지출 입력, 선택한 거래 수정, 월 합계 |
 | 예산 · 장보기 | [BudgetTab](../src/sgl/BudgetTab.java) | 예산 입력, 항목 편집, 장보기 초안·저장 |
-| 상품 · 할인 | [ProductTab](../src/sgl/ProductTab.java) | 상품 선택, 가격 직접 입력, 비동기 공식 가격 수집 |
+| 상품 · 할인 | [ProductTab](../src/sgl/ProductTab.java) | 상품 선택, 가격 직접 입력, 비동기 공식 가격 수집·수집 목록 창 |
 | 가격 비교 · 이력 | [PriceTab](../src/sgl/PriceTab.java) | 단위 가격 순위, 기간·지점 선택, 이력 그래프 |
 | 구매 목표 · 알림 | [TargetTab](../src/sgl/TargetTab.java) | 개인 목표 편집, 충족 가격과 알림 확인 |
 
@@ -25,7 +25,7 @@
 
 `AppState`는 상품을 ID로 찾는 `Map<String, Product>`와 가격 관측 목록 `List<PriceObservation>`을 보유합니다. `Repository`가 읽기·쓰기를 담당하며 JSON 파일의 기존 필드 이름과 버전 1 구조를 사용합니다. 상태 복사본은 독립된 컬렉션을 갖고 불변 상품·관측값을 공유합니다. [상태](../src/sgl/AppState.java) · [저장소](../src/sgl/Repository.java)
 
-다섯 기능 서비스와 수집 조정 서비스는 같은 저장소와 시계를 사용하는 `Service`를 상속합니다. `ProductService`는 상품 조회·직접 입력·즐겨찾기를 담당합니다. `OnlineCollectionService`가 `ProductCollector`를 통해 공식 페이지를 수집하고 새 가격을 저장한 뒤 `TargetService`에 목표 판정을 요청합니다. `OnlineCatalog`가 수집 목록과 출처별 오류를 관리하고, `HttpPageClient`와 `OfficialPageParser`가 제한된 HTTP 읽기와 상품 ID·규격·가격·재고·조건 검증을 수행합니다. 공개 서비스 요청·결과와 JSON 입출력은 기존 맵 계약을 사용합니다. 입력 키, 결과 상태와 오류는 실행 창의 Javadoc API 매뉴얼에서 확인할 수 있습니다. [서비스 클래스 다이어그램](class-services.png) · [빌드와 검증](verification.md)
+다섯 기능 서비스와 수집 조정·목록 관리 서비스는 같은 저장소와 시계를 사용하는 `Service`를 상속합니다. `ProductService`는 상품 조회·직접 입력·즐겨찾기를 담당합니다. `OnlineCollectionService`가 `ProductCollector`를 통해 공식 페이지를 수집하고 새 가격을 저장한 뒤 `TargetService`에 목표 판정을 요청합니다. `OnlineCatalog`가 수집 목록과 출처별 오류를 관리하고, `HttpPageClient`와 `OfficialPageParser`가 제한된 HTTP 읽기와 상품 ID·규격·가격·재고·조건 검증을 수행합니다. 공개 서비스 요청·결과와 JSON 입출력은 기존 맵 계약을 사용합니다. 입력 키, 결과 상태와 오류는 실행 창의 Javadoc API 매뉴얼에서 확인할 수 있습니다. [서비스 클래스 다이어그램](class-services.png) · [빌드와 검증](verification.md)
 
 직접 입력과 피드의 관측은 출처별로 보존됩니다. 같은 시각이면 직접 확인 기록을 우선하며, 피드 갱신 실패가 별도 직접 입력 기록을 삭제하지 않습니다. 가격 조회 조건이 바뀌면 이전 결과를 비우고, 배경 갱신은 선택한 상품·지점을 유지합니다.
 
@@ -35,3 +35,14 @@
 HTTP 읽기는 저장소 잠금 밖에서 수행합니다. 응답을 받은 후 최신 상태를 다시 읽고 가격만 합쳐 저장하므로, 다운로드 중 입력한 가계부·예산·즐겨찾기를 이전 복사본으로 덮어쓰지 않습니다. 버튼은 수집 중 중복 요청을 막고 SwingWorker가 화면 응답성을 유지합니다. 수집 성공 뒤 03·04·05와 장보기 예상액을 갱신합니다.
 
 수집 실패는 해당 웹 출처 관측만 현재 비교에서 제외하고 과거 이력과 독립적인 직접 입력을 보존합니다. 자동 시도 날짜와 마지막 성공 시각을 따로 저장하며 수동 버튼은 같은 날에도 재시도할 수 있습니다. `MartAdapter`의 로컬 파일 API는 기존 자료 호환과 테스트에만 남아 있고 파일 연결 버튼은 제공하지 않습니다.
+
+
+## 사용자가 선택하는 수집 목록
+
+`CollectionDialog`는 검색·확인·등록과 목록 관리를 담당합니다. `ProductDiscovery`는 공식 검색 응답에서 상품 링크를 찾고, 상세 페이지의 상품 ID와 이름·브랜드·판매 묶음 규격을 확인합니다. 미리보기는 저장하지 않으며 `CollectionListService.add`에서 사용자가 확인한 상품과 실제 가격, 향후 수집 설정을 한 번에 저장합니다. 규격을 자동으로 확정할 수 없으면 총 용량·개수 확인이 필요합니다.
+
+`CollectionSource`는 `Product`, 온라인몰, SKU, 정규화한 상세 URL과 활성 상태를 보유하는 불변 레코드입니다. `AppState`의 설정에 목록을 보관합니다. 설정이 없는 기존 파일만 기본 8개를 사용하고, 사용자가 비운 목록은 빈 상태로 유지합니다. `ProductCollector`는 선택한 목록을 전달받으며 `OnlineCatalog`는 활성 항목만 요청합니다.
+
+검색은 최대 40개 결과, 수집 목록은 최대 100개입니다. 검색과 HTTP 요청은 SwingWorker에서 실행합니다. 수집 중 사용자가 항목을 중지·삭제하면 늦게 도착한 해당 응답은 반영하지 않습니다. 상품 규격이 바뀌면 수집 오류로 표시하며 삭제 후 새 규격으로 등록할 수 있습니다. 새 규격은 독립 ID를 사용해 과거 가격과 거래를 보존합니다.
+
+[사용자 수집 목록 클래스 다이어그램](class-collection.png) · [검색 및 등록 시퀀스](sequence-discovery.png)
