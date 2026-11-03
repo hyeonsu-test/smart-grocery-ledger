@@ -1,0 +1,13 @@
+{
+  "version": "0.7.4-java-beta",
+  "report_revision": "reviewed",
+  "capture_method": "Actual Swing JAR components printAll at 2x; no web collection during this capture",
+  "jar_sha256": "328d7fda1340f5962053156ae9724cb82d4cd3be2e5ed202ba10c0992d4c040e",
+  "screens": {
+    "01-ledger.png": "DemoData.create; clock 2026-11-03T18:00+09:00; fictional",
+    "02-budget.png": "Same fictional demo state; 180000 budget / 38100 food spending / 24800 plan",
+    "05-targets.png": "Historical verification data collected 2026-11-03; frozen clock 20:27:28.921950400+09:00; all six rows visible"
+  },
+  "source": "ReportCapture.java in local report review evidence",
+  "not_claimed": "Prices recollected on report review date; new regression test run"
+}

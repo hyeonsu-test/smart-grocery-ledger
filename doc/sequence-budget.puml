@@ -1,0 +1,28 @@
+@startuml
+skinparam dpi 180
+skinparam shadowing false
+skinparam defaultFontName "Malgun Gothic"
+skinparam defaultFontSize 18
+skinparam sequenceMessageAlign center
+skinparam ParticipantBackgroundColor #F7F7F7
+skinparam ParticipantBorderColor #444444
+skinparam ArrowColor #444444
+skinparam LifeLineBorderColor #888888
+hide footbox
+participant "UI" as UI
+participant "Budget\nService" as S
+participant "Repo\n저장소" as R
+UI -> S : 2. manageBudgetPlan\n(req)
+S -> R : 3. snapshot()
+R --> S : 4. 상태 복사본
+S -> S : 5. 월 · 예산 · 수량 검증\n초안 적용
+opt 예산 / 계획 저장 요청
+ S -> R : 6. saveAtomic(candidate)
+ R --> S : 7. 저장 결과
+ break 저장 실패
+  S --> UI : SAVE_FAILED · draft
+ end
+end
+S -> S : 8. 유효 소계 계산\n잔여 예산 계산
+S --> UI : 9. 결과 Map\nsummary · items\ndraftPlan 등
+@enduml

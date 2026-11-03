@@ -1,0 +1,25 @@
+@startuml
+skinparam dpi 180
+skinparam shadowing false
+skinparam defaultFontName "Malgun Gothic"
+skinparam defaultFontSize 18
+skinparam sequenceMessageAlign center
+skinparam ParticipantBackgroundColor #F7F7F7
+skinparam ParticipantBorderColor #444444
+skinparam ArrowColor #444444
+skinparam LifeLineBorderColor #888888
+hide footbox
+participant "UI" as UI
+participant "Price\nService" as S
+participant "Repo\n저장소" as R
+UI -> S : 2. analyzePrices\n(req)
+S -> R : 3. snapshot()
+R --> S : 4. 상품 · 가격 기록
+S -> S : 5. 상품 · 조건 검증
+alt COMPARE
+ S -> S : 같은 비교 조건 선택\nProduct.unitPrice 환산\n유효 순위 / 제외 사유
+else HISTORY
+ S -> S : 상품 · 판매처 · 기간 선택\n날짜별 마지막 기록\n최저 · 최고 · 평균
+end
+S --> UI : 6. 결과 Map\nranked · excluded\n또는 rows · count · min · max · mean
+@enduml

@@ -68,3 +68,14 @@ LedgerFrame.dispose는 ProductTab.close를 호출합니다. ProductTab은 닫힘
 CollectionDialog는 selectionRevision으로 검색·상세 확인 요청 시점의 선택과 현재 선택을 대조합니다. 상품 행·주소·검색 조건이 바뀌면 미리보기와 등록 버튼을 해제하며 이전 선택의 지연 응답을 표시하지 않습니다. 등록·중지·재개 후에는 수집 출처 키로 같은 행을 선택합니다. ProductTab.selectRegisteredProduct는 새 상품이 기존 필터에 가려지지 않도록 표시합니다.
 
 TargetTab은 적용 기준이 없는 항목을 기준 없음으로 표시합니다. targetDirty인 동안 수동 알림 평가를 막아 저장된 이전 목표로 알림 이력을 소모하지 않게 합니다. 목표 저장과 새 알림 없음은 상태 표시줄에 안내합니다. TargetService의 저장된 목표 평가 계약은 유지합니다.
+
+## 서비스 호출 순서
+
+서비스 요청과 결과는 `Map<String, Object>`입니다. 상품은 `Product`, 관측은 `PriceObservation` 레코드로 표현합니다. 그림의 FN05는 `TargetService.managePurchaseTargets`를 뜻합니다. 입력 키와 상태값의 전체 계약은 Javadoc을 확인하세요.
+
+- [가계부 저장](sequence-ledger.png): 입력 검증 → 원자적 저장 → 영향을 받은 월의 집계 반환.
+- [예산·계획 저장](sequence-budget.png): 입력 검증 → 저장 요청 시 원자적 저장 → 소계·잔여 예산 계산. 저장 실패는 계산 전에 반환합니다. 조회와 초안 편집은 저장하지 않습니다.
+- [단가 비교·이력](sequence-prices.png): 기준 상품에서 규격·단위를 구하고 같은 조건의 현재 순위 또는 날짜별 정상 기록을 조회합니다.
+- [수집 후 목표 평가](sequence-targets.png): 수집 저장 성공 후 일반 메서드 호출로 EVALUATE를 요청합니다. 당일 알림 기록 저장에 성공한 결과만 화면에 표시합니다.
+
+그림은 주요 호출 순서를 요약합니다. 숫자는 본문과 대응하는 메시지 번호이며 생략된 사용자 입력 메시지는 화면 설명을 참고하세요. 함수의 시각은 생성자에 주입한 Clock에서 구합니다. 별도의 Request/Result 클래스나 PriceUpdated 이벤트 버스는 없습니다. 단가 나눗셈은 BigDecimal의 DECIMAL128 정밀도로 수행하고 화면 표시 자릿수는 따로 적용합니다.

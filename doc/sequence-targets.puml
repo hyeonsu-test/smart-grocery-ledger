@@ -1,0 +1,28 @@
+@startuml
+skinparam dpi 180
+skinparam shadowing false
+skinparam defaultFontName "Malgun Gothic"
+skinparam defaultFontSize 18
+skinparam sequenceMessageAlign center
+skinparam ParticipantBackgroundColor #F7F7F7
+skinparam ParticipantBorderColor #444444
+skinparam ArrowColor #444444
+skinparam LifeLineBorderColor #888888
+hide footbox
+participant "UI" as UI
+participant "Online\nCollection\nService" as C
+participant "Target\nService" as S
+participant "Repo\n저장소" as R
+note over C : 가격 수집 · 저장 성공 후
+C -> S : 1. FN05(req)\nEVALUATE
+S -> R : 2. snapshot()
+R --> S : 3. 상태 복사본
+S -> S : 4. 28일 기준 / 개인 목표\n현재 유효 가격과 비교
+opt 충족 · 알림 켬 · 당일 미알림
+ S -> R : 5. saveAtomic\n(당일 알림 기록)
+ R --> S : 6. 저장 결과
+end
+S --> C : 7. 결과 Map\nitems · notifications\nstatus
+C --> UI : 8. 수집 결과\n+ target_result
+UI -> UI : 9. 저장 성공한\n알림만 표시
+@enduml
