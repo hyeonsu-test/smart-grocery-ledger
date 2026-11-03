@@ -1,40 +1,31 @@
 @startuml
 skinparam dpi 180
 skinparam defaultFontName Arial
-skinparam defaultFontSize 15
+skinparam defaultFontSize 18
 skinparam shadowing false
-skinparam ParticipantPadding 12
-title SD03 Official price collection
-participant "ProductTab\nSwingWorker" as UI
-participant "OnlineCollection\nService" as Service
-participant "Online\nCatalog" as Collector
-participant "Official website" as Site
-participant Repository as Repo
-participant TargetService as Target
-UI -> Service : 1. collect(automatic, progress)
-Service -> Repo : 2. snapshot() / daily guard
-note over Service, Repo
-Network reads do not lock the ledger.
-end note
-Service -> Collector : 3. collect(progress)
-loop Built-in source catalog
-Collector -> Site : 4. bounded HTTPS GET
-Site --> Collector : product page / source error
-note right of Collector
-Validate ID, name, specification,
-KRW price, stock and conditions.
-end note
-Collector --> UI : progress message
+skinparam ParticipantPadding 4
+hide footbox
+participant UI
+participant "Collection\nservice" as Service
+participant Catalog as Collector
+participant Site
+participant Repo
+participant Target
+UI -> Service : 1. collect()
+Service -> Repo : 2. snapshot()
+Service -> Collector : 3. collect()
+loop Each source
+Collector -> Site : 4. HTTPS GET
+Site --> Collector : page / error
+Collector -> Collector : validate
 end
-Collector --> Service : 5. prices / errors
-Service -> Repo : 6. snapshot() / merge
-Service -> Repo : 7. saveAtomic(candidate)
+Collector --> Service : 5. results
+Service -> Repo : 6. merge
+Service -> Repo : 7. saveAtomic()
 Repo --> Service : OK / SAVE_FAILED
-alt Saved current prices
-Service -> Target : 8. EVALUATE(updated products)
-Target --> Service : saved alert results
+alt Saved
+Service -> Target : 8. EVALUATE
 end
-Service --> UI : 9. collection results
-UI -> UI : refresh related tabs
+Service --> UI : 9. results
 @enduml
 
