@@ -1,3 +1,4 @@
+PASS tabs, tables, headers, controls and text inputs share the smoothed UI font
 PASS five Swing use-case screens
 PASS each screen is owned by its own tab
 PASS history renders nine observed dates
@@ -26,5 +27,5 @@ PASS saving a cross-tab purchase records exactly one expense
 PASS asynchronous connected feed refresh completes
 PASS new feed product immediately appears in plan and comparison selectors
 PASS new feed price is compared without restarting app
-RESULT Swing action checks passed=28 failed=0
+RESULT Swing action checks passed=29 failed=0
 OS=Windows 11 Java=21.0.9

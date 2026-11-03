@@ -1,11 +1,11 @@
 {
-  "version": "0.5.0-java-beta",
+  "version": "0.5.1-java-beta",
   "built_for_java": 17,
   "build_jdk": "Temurin 21.0.9",
-  "jar_sha256": "e8c85af5fe18fe4b55b483f26d271b20b7e0aad8a2e7f7bbc782ea0f1aa82703",
-  "recorded_at": "2026-11-03T09:36:30+09:00",
+  "jar_sha256": "c4f739d36e8a4d75be8e20615f0c3b8ebed3812d94b87f36473ac18df9ef6a0b",
+  "recorded_at": "2026-11-03T10:07:57+09:00",
   "service_tests": 56,
-  "swing_checks": 28,
+  "swing_checks": 29,
   "verified_platforms": [
     "Windows 11 / Java 21.0.9 / GUI and services",
     "Windows 11 / Java 26 / executable JAR headless smoke",
@@ -15,7 +15,30 @@
     "macOS",
     "Linux GUI"
   ],
-  "native_screenshots": 5,
+  "native_screenshots": 0,
   "swing_component_renders": 5,
-  "javadoc_renders": 2
+  "javadoc_renders": 2,
+  "archived_native_screenshots": {
+    "version": "0.5.0",
+    "count": 5
+  },
+  "font_checks": {
+    "platform": "Windows",
+    "scales": [
+      "100%",
+      "150%"
+    ],
+    "family": "Malgun Gothic",
+    "antialiasing": "grayscale",
+    "components": [
+      "labels",
+      "tabs",
+      "buttons",
+      "tables",
+      "table headers",
+      "text fields",
+      "combo boxes",
+      "text areas"
+    ]
+  }
 }

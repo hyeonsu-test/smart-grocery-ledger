@@ -5,7 +5,6 @@ import java.awt.image.BufferedImage;
 import java.lang.reflect.Field;
 import java.nio.file.*;
 import java.time.Clock;
-import java.util.Collections;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 
@@ -26,17 +25,12 @@ public final class UiRenderEvidence {
     Path temp = Files.createTempDirectory("sgl-render-");
     Repository copy = new Repository(temp.resolve("demo.json"));
     copy.saveAtomic(original.snapshot());
-    System.setProperty("awt.useSystemAAFontSettings", "off");
     Throwable[] error = {null};
     SwingUtilities.invokeAndWait(
         () -> {
           LedgerFrame frame = null;
           try {
-            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-            Font font = new Font(Font.DIALOG, Font.PLAIN, 14);
-            UIManager.put("defaultFont", font);
-            for (Object key : Collections.list(UIManager.getDefaults().keys()))
-              if (UIManager.get(key) instanceof Font) UIManager.put(key, font);
+            SwingAppearance.install();
             frame = new LedgerFrame(copy, Clock.systemDefaultZone(), false);
             frame.setVisible(true);
             frame.validate();

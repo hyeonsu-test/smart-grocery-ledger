@@ -49,8 +49,27 @@ public final class UiSmokeTests {
         () -> {
           LedgerFrame frame = null;
           try {
+            SwingAppearance.install();
             frame = new LedgerFrame(repo, clock, false);
             JTabbedPane tabs = field(frame, "tabs");
+            JTable priceHistory = field(frame.priceTab, "historyTable");
+            JTextField amountInput = field(frame.ledgerTab, "recordAmount");
+            String family = new JLabel().getFont().getFamily();
+            check(
+                java.util.List.of(
+                            tabs,
+                            priceHistory,
+                            priceHistory.getTableHeader(),
+                            amountInput,
+                            button(frame, "내역 저장"),
+                            new JTextArea(),
+                            new JComboBox<>())
+                        .stream()
+                        .allMatch(c -> c.getFont().getFamily().equals(family))
+                    && UIManager.get(RenderingHints.KEY_TEXT_ANTIALIASING) != null
+                    && UIManager.get(RenderingHints.KEY_TEXT_ANTIALIASING)
+                        != RenderingHints.VALUE_TEXT_ANTIALIAS_OFF,
+                "tabs, tables, headers, controls and text inputs share the smoothed UI font");
             check(tabs.getTabCount() == 5, "five Swing use-case screens");
             check(
                 tabs.getComponentAt(0) instanceof LedgerTab

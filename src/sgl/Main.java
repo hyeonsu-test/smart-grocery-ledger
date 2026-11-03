@@ -14,7 +14,7 @@ import javax.swing.*;
 /** Executable JAR entry point. Run with --demo for isolated fictional data. */
 public final class Main {
   /** Application version. */
-  public static final String VERSION = "0.5.0-java-beta";
+  public static final String VERSION = "0.5.1-java-beta";
 
   private static FileChannel lockChannel;
   private static FileLock processLock;
@@ -28,7 +28,6 @@ public final class Main {
    * @throws Exception for fatal setup failures
    */
   public static void main(String[] args) throws Exception {
-    System.setProperty("awt.useSystemAAFontSettings", "off");
     boolean demo = false, auto = true;
     Path dir = Path.of(System.getProperty("user.home"), "SmartGroceryLedger", "data");
     for (int i = 0; i < args.length; i++)
@@ -94,16 +93,7 @@ public final class Main {
     boolean autoRefresh = auto;
     SwingUtilities.invokeLater(
         () -> {
-          try {
-            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-          } catch (ReflectiveOperationException | UnsupportedLookAndFeelException ignored) {
-            // The standard Swing look and feel remains usable.
-          }
-          UIManager.put("swing.boldMetal", false);
-          Font font = new Font(Font.DIALOG, Font.PLAIN, 14);
-          UIManager.put("defaultFont", font);
-          for (Object key : Collections.list(UIManager.getDefaults().keys()))
-            if (UIManager.get(key) instanceof Font) UIManager.put(key, font);
+          SwingAppearance.install();
           LedgerFrame frame = new LedgerFrame(repo, clock, autoRefresh);
           frame.setVisible(true);
         });

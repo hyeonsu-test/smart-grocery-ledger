@@ -36,7 +36,7 @@ java -jar SmartGroceryLedger.jar
 - **내 자료를 보관할 때**는 사용자 홈의 `SmartGroceryLedger/data` 폴더를 확인하세요. 개인 가계부는 `ledger.json`, 시연 가계부는 `demo.json`입니다. 앱을 닫은 뒤 해당 파일을 복사해 백업할 수 있습니다.
 - **새 시연 자료가 필요할 때**는 새 폴더 이름을 지정해 `java -jar SmartGroceryLedger.jar --demo --data-dir "./demo-new"`로 실행하세요. 시연 가격은 시연 가계부를 처음 만드는 날짜를 기준으로 생성됩니다.
 
-이전 버전의 가계부 파일은 같은 데이터 폴더에서 그대로 열 수 있습니다. 현재 버전은 **0.5.0-java-beta**입니다. 소스에서 빌드하거나 서비스 API를 살펴보려면 아래 문서를 이용하세요.
+이전 버전의 가계부 파일은 같은 데이터 폴더에서 그대로 열 수 있습니다. Windows에서는 작은 한글도 선명하게 읽을 수 있도록 맑은 고딕과 글자 가장자리 부드럽게 표시를 적용합니다. 현재 버전은 **0.5.1-java-beta**입니다. 소스에서 빌드하거나 서비스 API를 살펴보려면 아래 문서를 이용하세요.
 
 - [빌드, 테스트 및 플랫폼별 실행 결과](doc/verification.md)
 - [객체 구조와 클래스 다이어그램](doc/architecture.md)

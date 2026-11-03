@@ -19,6 +19,7 @@ src/sgl/ProductService.java
 src/sgl/ProductTab.java
 src/sgl/Repository.java
 src/sgl/Service.java
+src/sgl/SwingAppearance.java
 src/sgl/SwingViews.java
 src/sgl/TabView.java
 src/sgl/TargetService.java

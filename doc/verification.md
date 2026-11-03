@@ -22,15 +22,15 @@ Swing 검사를 실행하려면 그래픽 화면이 필요합니다. JAR만 받�
 java -jar SmartGroceryLedger.jar --smoke-test
 ```
 
-## 0.5.0 실행 결과
+## 0.5.1 실행 결과
 
 | 환경 | 확인한 동작 | 실행 로그 |
 |---|---|---|
-| Windows 11 · Java 21.0.9 | 서비스 56개와 Swing 28항목 통과. JAR의 다섯 탭 실행 확인 | [서비스](../test-log/service-tests.log) · [Swing](../test-log/swing-actions.log) · [JAR](../test-log/jar-smoke.log) |
+| Windows 11 · Java 21.0.9 | 서비스 56개와 Swing 29항목 통과. JAR의 다섯 탭 실행 확인 | [서비스](../test-log/service-tests.log) · [Swing](../test-log/swing-actions.log) · [JAR](../test-log/jar-smoke.log) |
 | Windows 11 · Java 26 | 배포 JAR의 서비스·저장·재읽기 검사 통과 | [JAR](../test-log/windows-java26-jar.log) |
 | Ubuntu 26.04 · WSL2 · Java 17.0.17 | 화면 없이 서비스 56개와 동일 배포 JAR 검사 통과 | [서비스](../test-log/linux-service-tests.log) · [JAR](../test-log/linux-jar-smoke.log) |
 
-Linux GUI와 macOS 실행은 미검증입니다. 배포 JAR의 SHA-256은 `e8c85af5fe18fe4b55b483f26d271b20b7e0aad8a2e7f7bbc782ea0f1aa82703`입니다. [배포 정보](../release-manifest.json)
+Linux GUI와 macOS 실행은 미검증입니다. 배포 JAR의 SHA-256은 `c4f739d36e8a4d75be8e20615f0c3b8ebed3812d94b87f36473ac18df9ef6a0b`입니다. [배포 정보](../release-manifest.json)
 
 이전 버전에서 생성한 가계부를 열어 상품 규격, 가격, 시간대, 거래, 예산을 저장 후 다시 읽는 검사도 포함합니다. 반복소수 단가를 화면에 표시하고 정렬하는 경로, 상품 탭에서 가계부 탭으로 이동해 저장할 때 지출이 한 번만 생기는 경로를 확인합니다. [호환성 검사 자료](../test/fixtures/legacy-ledger-v1.json)
 
@@ -47,4 +47,6 @@ Linux GUI와 macOS 실행은 미검증입니다. 배포 JAR의 SHA-256은 `e8c85
 
 Javadoc은 빌드 후 `doc/api/index.html`에서 열거나, 실행 중인 앱 상단의 **Javadoc API 매뉴얼** 버튼으로 열 수 있습니다. 빌드는 Java 17을 대상으로 하며 컴파일과 Javadoc 경고를 오류로 처리합니다. [빌드 스크립트](../build.ps1) · [API 개요 화면](screenshots/api/06-javadoc-overview.png)
 
-`doc/screenshots/native`에는 Windows에서 실행한 창의 원본 캡처가, `doc/screenshots/rendered`에는 Swing 컴포넌트를 고해상도로 출력한 이미지가 있습니다. 두 폴더 모두 가상 시연 데이터를 사용합니다. [Windows 실행 창](screenshots/native/01-ledger.png) · [장보기 화면](screenshots/rendered/02-budget.png)
+`doc/screenshots/native`에는 0.5.0 시연 창의 원본 캡처가, `doc/screenshots/rendered`에는 0.5.1 Swing 컴포넌트를 고해상도로 출력한 이미지가 있습니다. 두 폴더 모두 가상 시연 데이터를 사용합니다. [0.5.0 실행 창](screenshots/native/01-ledger.png) · [장보기 화면](screenshots/rendered/02-budget.png)
+
+Windows에서 100%와 150% 배율로 같은 문구를 렌더링했습니다. 탭, 버튼, 표와 표 머리글, 입력란과 텍스트 영역에 맑은 고딕이 적용되며 글자 가장자리에 회색 중간색이 표시됩니다. [150% 배율의 한글 비교](screenshots/font-comparison.png)

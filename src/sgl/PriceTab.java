@@ -182,6 +182,7 @@ final class PriceTab extends TabView {
       super.paintComponent(g);
       Graphics2D d = (Graphics2D) g.create();
       d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+      d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
       d.setColor(Color.WHITE);
       d.fillRect(0, 0, getWidth(), getHeight());
       d.setColor(INK);
