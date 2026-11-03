@@ -66,7 +66,7 @@ public final class LedgerFrame extends JFrame {
     heading.setBackground(INK);
     heading.setBorder(BorderFactory.createEmptyBorder(18, 22, 18, 22));
     JLabel title = new JLabel("Smart Grocery Ledger");
-    title.setFont(title.getFont().deriveFont(Font.BOLD, 25f));
+    title.setFont(SwingAppearance.heading(25f));
     title.setForeground(Color.WHITE);
     heading.add(title, BorderLayout.WEST);
     JPanel tools = flow();
@@ -87,6 +87,9 @@ public final class LedgerFrame extends JFrame {
     tabs.addTab("03  상품 · 할인", productTab);
     tabs.addTab("04  가격 비교 · 이력", priceTab);
     tabs.addTab("05  구매 목표 · 알림", targetTab);
+    for (int i = 0; i < tabs.getTabCount(); i++) {
+      tabs.setTabComponentAt(i, new TabTitle(tabs.getTitleAt(i)));
+    }
     add(tabs, BorderLayout.CENTER);
     JPanel footer = new JPanel(new BorderLayout());
     footer.setBorder(BorderFactory.createEmptyBorder(4, 22, 12, 22));

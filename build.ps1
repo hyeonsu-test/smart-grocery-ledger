@@ -27,7 +27,10 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $apiArchive = Join-Path $PSScriptRoot 'resources/api.zip'
 if (Test-Path -LiteralPath $apiArchive) { Remove-Item -LiteralPath $apiArchive }
 [IO.Compression.ZipFile]::CreateFromDirectory((Join-Path $PSScriptRoot 'doc/api'),$apiArchive)
-Invoke-Jdk jar @('--create','--file','SmartGroceryLedger.jar','--main-class','sgl.Main','-C','bin','.','-C','resources','.') 'test-log/jar-build.log'
+# Include the same typefaces in the loose-class runtime and the standalone JAR.
+New-Item -ItemType Directory -Path 'bin/fonts' -Force | Out-Null
+Get-ChildItem -LiteralPath 'resources/fonts' -File | Copy-Item -Destination 'bin/fonts'
+Invoke-Jdk jar @('--create','--file','SmartGroceryLedger.jar','--main-class','sgl.Main','-C','bin','sgl','-C','resources','.') 'test-log/jar-build.log'
 if (!$SkipTests) {
     Invoke-Jdk javac @('-J-Dfile.encoding=UTF-8','--release','17','-encoding','UTF-8','-Xlint:all,-serial','-Werror','-cp','bin','-d','test-bin','test/sgl/ServiceTests.java','test/sgl/UiSmokeTests.java','test/sgl/UiRenderEvidence.java') 'test-log/test-compile.log'
     Copy-Item -LiteralPath 'test/fixtures/legacy-ledger-v1.json' -Destination 'test-bin/legacy-ledger-v1.json'

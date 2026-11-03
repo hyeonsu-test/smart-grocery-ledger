@@ -1,11 +1,11 @@
 {
-  "version": "0.5.1-java-beta",
+  "version": "0.5.2-java-beta",
   "built_for_java": 17,
   "build_jdk": "Temurin 21.0.9",
-  "jar_sha256": "c4f739d36e8a4d75be8e20615f0c3b8ebed3812d94b87f36473ac18df9ef6a0b",
-  "recorded_at": "2026-11-03T10:07:57+09:00",
+  "jar_sha256": "a0d4cec5da5d650a963a1011ba9332ca7b45797936f947000f02cf48cc26b653",
+  "recorded_at": "2026-11-03T10:19:10+09:00",
   "service_tests": 56,
-  "swing_checks": 29,
+  "swing_checks": 30,
   "verified_platforms": [
     "Windows 11 / Java 21.0.9 / GUI and services",
     "Windows 11 / Java 26 / executable JAR headless smoke",
@@ -23,22 +23,21 @@
     "count": 5
   },
   "font_checks": {
+    "family": "IBM Plex Sans KR",
+    "weights": [
+      "Regular",
+      "Bold"
+    ],
+    "bundled": true,
     "platform": "Windows",
+    "tab_size_pt": 16,
     "scales": [
       "100%",
-      "150%"
+      "125%",
+      "150%",
+      "200%"
     ],
-    "family": "Malgun Gothic",
-    "antialiasing": "grayscale",
-    "components": [
-      "labels",
-      "tabs",
-      "buttons",
-      "tables",
-      "table headers",
-      "text fields",
-      "combo boxes",
-      "text areas"
-    ]
+    "capture": "actual JTabbedPane, five selected states per scale",
+    "regular_sha256": "53750379270312368cf7641901f43a98dd892e3d9d5798cf25cdc245c85c71c0"
   }
 }

@@ -21,6 +21,7 @@ src/sgl/Repository.java
 src/sgl/Service.java
 src/sgl/SwingAppearance.java
 src/sgl/SwingViews.java
+src/sgl/TabTitle.java
 src/sgl/TabView.java
 src/sgl/TargetService.java
 src/sgl/TargetTab.java

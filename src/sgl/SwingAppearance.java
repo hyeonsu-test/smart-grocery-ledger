@@ -1,19 +1,20 @@
 package sgl;
 
 import java.awt.Font;
-import java.awt.GraphicsEnvironment;
+import java.awt.FontFormatException;
 import java.awt.RenderingHints;
-import java.util.Arrays;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.FontUIResource;
 
 /** Configures text before any application components are created. */
 final class SwingAppearance {
-  private static final String SAMPLE = "가계부 월별 예산 장보기 가격 확인 한글 0123456789";
+  private static final float BODY_SIZE = 15f;
+  private static final Font REGULAR = readFace("Regular");
+  private static final Font BOLD = readFace("Bold");
 
   private SwingAppearance() {}
 
@@ -28,32 +29,33 @@ final class SwingAppearance {
     // Whole-pixel grayscale smoothing also works when Windows scales a window or an image.
     defaults.put(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-    Font face = koreanFont();
+    Font face = REGULAR.deriveFont(BODY_SIZE);
     defaults.put("defaultFont", new FontUIResource(face));
     for (Object key : Collections.list(defaults.keys())) {
       if (defaults.get(key) instanceof Font previous) {
-        defaults.put(key, new FontUIResource(face.deriveFont(previous.getStyle())));
+        defaults.put(
+            key,
+            new FontUIResource(
+                (previous.isBold() ? BOLD : REGULAR).deriveFont(previous.getStyle(), BODY_SIZE)));
       }
     }
   }
 
-  private static Font koreanFont() {
-    var installed =
-        Arrays.asList(
-            GraphicsEnvironment.getLocalGraphicsEnvironment()
-                .getAvailableFontFamilyNames(Locale.ENGLISH));
-    for (String family :
-        List.of(
-            "Malgun Gothic",
-            "Apple SD Gothic Neo",
-            "Noto Sans CJK KR",
-            "Noto Sans KR",
-            "NanumGothic")) {
-      if (installed.contains(family)) {
-        Font candidate = new Font(family, Font.PLAIN, 14);
-        if (candidate.canDisplayUpTo(SAMPLE) == -1) return candidate;
-      }
+  static Font heading(float size) {
+    return BOLD.deriveFont(Font.BOLD, size);
+  }
+
+  static Font tabFont() {
+    return REGULAR.deriveFont(16f);
+  }
+
+  private static Font readFace(String weight) {
+    String path = "/fonts/IBMPlexSansKR-" + weight + ".ttf";
+    try (InputStream stream = SwingAppearance.class.getResourceAsStream(path)) {
+      if (stream == null) throw new IllegalStateException("글꼴 파일을 찾을 수 없습니다: " + path);
+      return Font.createFont(Font.TRUETYPE_FONT, stream);
+    } catch (IOException | FontFormatException ex) {
+      throw new IllegalStateException("글꼴을 읽을 수 없습니다: " + path, ex);
     }
-    return new Font(Font.DIALOG, Font.PLAIN, 14);
   }
 }

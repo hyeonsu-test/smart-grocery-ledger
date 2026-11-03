@@ -69,7 +69,7 @@ final class SwingViews {
     p.setBorder(BorderFactory.createEmptyBorder(14, 12, 12, 12));
     p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
     JLabel t = new JLabel(title);
-    t.setFont(t.getFont().deriveFont(Font.BOLD, 20f));
+    t.setFont(SwingAppearance.heading(20f));
     t.setForeground(INK);
     p.add(t);
     p.add(Box.createVerticalStrut(6));

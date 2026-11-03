@@ -70,6 +70,16 @@ public final class UiSmokeTests {
                     && UIManager.get(RenderingHints.KEY_TEXT_ANTIALIASING)
                         != RenderingHints.VALUE_TEXT_ANTIALIAS_OFF,
                 "tabs, tables, headers, controls and text inputs share the smoothed UI font");
+            check(
+                "IBM Plex Sans KR"
+                        .equals(new JLabel().getFont().getFamily(java.util.Locale.ENGLISH))
+                    && tabs.getTabComponentAt(0) instanceof JLabel header
+                    && header.getFont().getPSName().equals("IBMPlexSansKR-Regular")
+                    && header.getFont().getSize() == 16
+                    && header.getFont().canDisplayUpTo("가계부 예산 장보기 상품 할인 가격 비교 이력 구매 목표 알림") == -1
+                    && SwingAppearance.heading(20).getPSName().equals("IBMPlexSansKR-Bold"),
+                "actual tab header uses bundled Korean typeface and bundled bold face is"
+                    + " available");
             check(tabs.getTabCount() == 5, "five Swing use-case screens");
             check(
                 tabs.getComponentAt(0) instanceof LedgerTab
