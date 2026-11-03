@@ -1,38 +1,48 @@
-# Java 베타 검증 기록
+# 빌드와 검증
 
-검증 기록 시각: 2026-11-02T17:40:40+09:00 (Asia/Seoul). 실제 실행한 테스트 로그를 `test-log/`에 보관한다.
+Java 17 이상의 JDK에서 프로젝트 최상위 폴더를 열고 다음 명령을 실행하세요. 빌드 스크립트가 Java 소스와 테스트를 컴파일하고, Javadoc을 생성하고, 실행 JAR를 만든 뒤 서비스 검사와 JAR 실행 검사를 수행합니다.
 
-| 환경 | 검증 | 결과 |
+**Windows PowerShell**
+
+```powershell
+.\build.ps1
+java -cp "bin;test-bin" sgl.UiSmokeTests
+```
+
+**Linux 또는 macOS 셸**
+
+```sh
+sh build.sh
+java -cp "bin:test-bin" sgl.UiSmokeTests
+```
+
+Swing 검사를 실행하려면 그래픽 화면이 필요합니다. JAR만 받은 경우에는 다음 명령으로 화면을 열지 않고 서비스 다섯 개, 임시 파일 저장과 재읽기, 내장 Javadoc 자원을 확인할 수 있습니다.
+
+```sh
+java -jar SmartGroceryLedger.jar --smoke-test
+```
+
+## 0.4.2 실행 결과
+
+| 환경 | 확인한 동작 | 실행 로그 |
 |---|---|---|
-| Windows 11 x64 / Temurin 21.0.9 | 서비스 회귀 테스트 | 54개 통과, 실패 0 |
-| Windows 11 x64 / Temurin 21.0.9 | Swing 컴포넌트 내부 액션 검사 | 25항목 통과, 실패 0 |
-| Windows 11 x64 / Temurin 21.0.9 | 실제 JAR 창과 5개 탭 | 실행 및 시각 확인, 원본 캡처 보관 |
-| Windows 11 x64 / Oracle Java 26 | 동일 JAR 실행·5개 서비스·저장/재읽기·내장 Javadoc | 통과 |
-| Ubuntu 26.04 LTS / WSL2 Linux / Temurin 17.0.17 | 동일 JAR 실행·5개 서비스·저장/재읽기·내장 Javadoc | 통과, 화면 없는 실행 |
-| Ubuntu 26.04 LTS / WSL2 Linux / Temurin 17.0.17 | 서비스 회귀 테스트 | 54개 통과, 실패 0 |
-| macOS | 실제 실행 | 미검증 |
+| Windows 11 · Java 21.0.9 | 서비스 54개와 Swing 25항목 통과. JAR의 다섯 탭 실행 확인 | [서비스](../test-log/service-tests.log) · [Swing](../test-log/swing-actions.log) · [JAR](../test-log/jar-smoke.log) |
+| Windows 11 · Java 26 | 배포 JAR의 서비스·저장·재읽기 검사 통과 | [JAR](../test-log/windows-java26-jar.log) |
+| Ubuntu 26.04 · WSL2 · Java 17.0.17 | 화면 없이 서비스 54개와 동일 배포 JAR 검사 통과 | [서비스](../test-log/linux-service-tests.log) · [JAR](../test-log/linux-jar-smoke.log) |
 
-Linux 결과는 실제 Linux Java 프로세스의 파일 저장·서비스 실행 검사다. Linux GUI 및 macOS 실행이 통과했다고 주장하지 않는다. 모든 플랫폼의 동작을 보장한다는 뜻도 아니다.
+Linux GUI와 macOS 실행은 미검증입니다. 배포 JAR의 SHA-256은 `6481866cc2307e29e686dca3a6a31d02612ae05cb3010be4b37ae616eca49faf`입니다. [배포 정보](../release-manifest.json)
 
-## 테스트 범위
+서비스 검사는 독립된 임시 폴더에서 실제 저장, 저장 실패 시 복구, 월 이동, 가격 유효 기간, 단위 환산, 목표 알림의 재실행 중복 방지를 확인합니다. Swing 검사는 저장 버튼, 장보기 초안, 미저장 입력과 피드 갱신 후 상품 목록 반영을 확인합니다. 실패가 있으면 검사 프로세스가 종료 코드 1을 반환합니다. [서비스 검사 코드](../test/sgl/ServiceTests.java) · [화면 검사 코드](../test/sgl/UiSmokeTests.java)
 
-서비스 검사는 JSON 문법·한글/유니코드, 내역 CRUD·날짜 이동·취소·검색, 금액/수량/기간 검증, 상품 구매의 실제 결제 금액, 저장 실패 보존, 손상 파일 쓰기 차단, 깊은 복사, 예산 미설정과 0원 구분, 계획 초안·저장·미확정 가격, 다섯 품목의 단위 환산, 24시간 경계·행사 기간, 조건 분리·시간대 비교, 과거 일별 최종 관측, 28일 날짜별 동등 가중 평균, 최소 관측일, 개인 목표 우선, 저장 후 알림·재실행 중복 방지, 즐겨찾기, 출처별 갱신 실패와 전체 출처 트랜잭션, 자동 갱신 일자 제한을 포함한다.
+## 디렉터리와 API 문서
 
-Swing 검사는 화면 5개 생성, 이력 9일 표시, 가계부 저장 버튼과 재읽기, 계획 초안/저장 및 지출과의 분리, 즐겨찾기 목표 표시와 목표 저장 버튼을 검사한다. 자동 검사는 코드 안의 Swing 컴포넌트와 이벤트를 사용하며 기존 Windows 창에 키/마우스 입력을 주입하지 않는다.
+| 경로 | 내용 |
+|---|---|
+| `src/sgl/`, `test/sgl/` | 앱과 테스트의 Java 소스 |
+| `bin/`, `test-bin/` | 빌드가 생성하는 앱과 테스트 클래스 |
+| `lib/`, `resources/` | 라이브러리 안내, 예시 피드, 빌드가 생성하는 Javadoc 압축 파일 |
+| `doc/api/`, `doc/screenshots/`, `test-log/` | 생성된 API 문서, 시연 화면, 테스트 로그 |
 
-## 화면 증거 구분
+Javadoc은 빌드 후 `doc/api/index.html`에서 열거나, 실행 중인 앱 상단의 **Javadoc API 매뉴얼** 버튼으로 열 수 있습니다. 빌드는 Java 17을 대상으로 하며 컴파일과 Javadoc 경고를 오류로 처리합니다. [빌드 스크립트](../build.ps1) · [API 개요 화면](screenshots/api/06-javadoc-overview.png)
 
-- `screenshots/native/`: 실제 JAR를 Windows에서 실행한 창의 원본 캡처 5개. 시연 모드와 가상 가격 표시를 유지했다.
-- `screenshots/rendered/`: 같은 Java/Swing 코드와 동일한 시연 상태를 별도 실행 인스턴스에 올려, 실제 컴포넌트 트리를 `printAll`로 2배 해상도 출력한 이미지. 가독성을 위한 화면 출력이며 OS 전체 창 스크린샷과 구분한다. 별도의 GUI 스케치를 그린 것이 아니다.
-- `screenshots/api/`: Java 소스에서 생성한 실제 Javadoc HTML을 네트워크가 차단된 독립 headless Chromium으로 렌더링한 화면. 기존 사용자 브라우저 세션에는 접근하지 않았다.
-- `test/sgl/UiRenderEvidence.java`: 고해상도 화면 출력 재현 코드. 유효한 시연 JSON만 입력받고 임시 사본을 사용한다.
-
-## 빌드와 문서
-
-JDK 21.0.9에서 `javac --release 17 -Xlint:all,-serial -Werror`로 컴파일했다. Javadoc은 `-Xdoclint:all -Werror`로 생성했다. 외부 런타임·테스트 라이브러리는 없으며 Javadoc은 실행 JAR에 내장했다. 원자적 파일 교체가 지원되지 않는 환경에서는 안전하게 저장 실패를 반환한다.
-
-검증된 JAR SHA-256: `6481866cc2307e29e686dca3a6a31d02612ae05cb3010be4b37ae616eca49faf`. 최종 배포 시 `release-manifest.json`과 일치하는지 확인한다.
-
-실제 마트 웹 수집, macOS 실행, Linux GUI, 앱을 종료한 동안의 알림은 이 검증 범위에 포함되지 않는다. 온라인 가격 피드는 사용자가 지정한 로컬 JSON 파일을 읽는 방식이다.
-
-0.4.2 전체 검토에서 서비스 회귀 검사 8개와 Swing 검사 15항목을 추가했다. 수정 전 JAR는 새 서비스 검사에서 8개 실패, 수정본은 전체 54개 통과했다. 세부 변경은 `review-2026-11-02.md`에 기록했다.
+`doc/screenshots/native`에는 Windows에서 실행한 창의 원본 캡처가, `doc/screenshots/rendered`에는 Swing 컴포넌트를 고해상도로 출력한 이미지가 있습니다. 두 폴더 모두 가상 시연 데이터를 사용합니다. [Windows 실행 창](screenshots/native/01-ledger.png) · [장보기 화면](screenshots/rendered/02-budget.png)
