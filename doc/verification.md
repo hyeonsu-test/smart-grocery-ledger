@@ -117,8 +117,25 @@ ProductFlowTests는 실제 Swing 창에서 기존 상품이 있는 상태로 새
 
 Javadoc은 빌드 후 `doc/api/index.html` 또는 앱의 **Javadoc API 매뉴얼** 버튼으로 여세요. javac는 `--release 17 -Xlint:all,-serial -Werror`, javadoc은 `-Xdoclint:all -Werror`로 검사합니다.
 
-rendered의 01·02는 가상 시연 자료, 03·04·05·08·09는 실제 수집·검색으로 실행한 Swing 컴포넌트 출력입니다. 03·04·05는 0.7.4의 신규 6개 연동 검증 화면이며, 08·09는 0.7.4의 빈 데이터 첫 실행과 실제 생수 검색·등록 화면입니다. 05의 목표가는 테스트용 사용자 설정 예시입니다. 나머지 화면은 해당 기능이 같은 이전 버전 자료를 유지합니다. native 폴더와 탭 배율 비교는 이전 버전의 보관 자료입니다. 새 보고서에는 실제 검색 화면과 목록을 포함합니다.
+### API 매뉴얼
 
-[상품 검색](screenshots/rendered/08-discovery.png) · [수집 목록](screenshots/rendered/09-collection-list.png) · [API 개요](screenshots/api/06-javadoc-overview.png)
+| 항목 | Javadoc 화면 |
+|---|---|
+| API01 | [sgl 패키지 개요](screenshots/api/06-javadoc-overview.png) |
+| API02 | [OnlineCollectionService의 close·collect 메서드](screenshots/api/07-javadoc-method.png) |
+
+### 베타 실행 화면
+
+UI01·UI02는 가상 거래로 계산한 예산과 지출입니다. UI03~UI07은 2026년 11월 3일 실제 상품 검색·수집 자료를 사용하며, UI05의 개인 목표는 검증용 설정입니다.
+
+| 항목 | 실행 화면 |
+|---|---|
+| UI01 | [가계부 내역과 월 합계](screenshots/rendered/01-ledger.png) |
+| UI02 | [식료품 예산과 장보기 계획](screenshots/rendered/02-budget.png) |
+| UI03 | [상품 가격과 할인 정보](screenshots/rendered/03-products.png) |
+| UI04 | [단위 가격 비교와 가격 이력](screenshots/rendered/04-prices.png) |
+| UI05 | [구매 목표와 알림](screenshots/rendered/05-targets.png) |
+| UI06 | [상품 검색과 선택 등록](screenshots/rendered/08-discovery.png) |
+| UI07 | [수집 목록 관리](screenshots/rendered/09-collection-list.png) |
 
 IBM Plex Sans KR Regular·Bold 글꼴과 OFL 배포 조건은 JAR 안에 있습니다. 탭은 16pt이며 0.5.2에서 100%·125%·150%·200% 배율을 확인한 렌더러를 유지합니다. [라이선스](../resources/fonts/OFL.txt) · [원본과 해시](../resources/fonts/SOURCE.txt)

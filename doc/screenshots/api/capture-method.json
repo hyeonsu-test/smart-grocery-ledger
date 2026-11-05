@@ -7,8 +7,8 @@
   },
   {
     "image": "07-javadoc-method.png",
-    "source": "sgl/Product.html",
-    "title": "Product (Smart Grocery Ledger Java API)",
+    "source": "sgl/OnlineCollectionService.html",
+    "title": "OnlineCollectionService (Smart Grocery Ledger Java API)",
     "method": "Chromium rendering of generated Javadoc HTML"
   }
 ]

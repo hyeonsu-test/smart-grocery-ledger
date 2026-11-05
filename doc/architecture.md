@@ -13,19 +13,19 @@
 | 가격 비교 · 이력 | [PriceTab](../src/sgl/PriceTab.java) | 단위 가격 순위, 기간·지점 선택, 이력 그래프 |
 | 구매 목표 · 알림 | [TargetTab](../src/sgl/TargetTab.java) | 개인 목표 편집, 충족 가격과 알림 확인 |
 
-각 탭은 자기 입력란과 선택 상태를 보유합니다. 공통 상위 클래스 `TabView`의 `hasDraft()`와 `discardDraft()`를 통해 창이 이동 전에 미저장 편집을 확인합니다. [화면 클래스 다이어그램](class-storage-ui.png)
+각 탭은 자기 입력란과 선택 상태를 보유합니다. 공통 상위 클래스 `TabView`의 `hasDraft()`와 `discardDraft()`를 통해 창이 이동 전에 미저장 편집을 확인합니다. [CD01 창과 탭의 책임](class-storage-ui.png)
 
 ## 상품과 가격
 
 `Product`는 상품 ID, 품목, 규격, 낱개 용량, 단위와 묶음 수를 보유하는 불변 Java 레코드입니다. `unitPrice`는 묶음 가격을 기준 단위로 환산합니다. 우유 1,000ml 한 팩이 2,600원이면 100ml당 가격은 260원입니다. `comparableTo`는 포장 개수가 다른 경우에도 품목, 브랜드, 규격, 낱개 용량과 단위가 일치하는지 확인합니다. [Product 소스](../src/sgl/Product.java)
 
-`PriceObservation`은 어느 상품의 가격을 언제, 어느 마트·지점에서, 어떤 조건으로 확인했는지 기록합니다. 금액은 `BigDecimal`, 확인 시각은 `OffsetDateTime`입니다. 행사 기간과 확인 후 24시간 경계를 검사해 현재 유효 여부를 판정합니다. 상품·비교 탭은 이 객체와 상품이 들어 있는 `OfferRow`를 표시합니다. 가격이 없는 카탈로그 항목의 관측값은 null이며 상품 탭에 가격 미확인으로 표시됩니다. [가격 관측 소스](../src/sgl/PriceObservation.java) · [상품과 가격 클래스 다이어그램](class-domain.png)
+`PriceObservation`은 어느 상품의 가격을 언제, 어느 마트·지점에서, 어떤 조건으로 확인했는지 기록합니다. 금액은 `BigDecimal`, 확인 시각은 `OffsetDateTime`입니다. 행사 기간과 확인 후 24시간 경계를 검사해 현재 유효 여부를 판정합니다. 상품·비교 탭은 이 객체와 상품이 들어 있는 `OfferRow`를 표시합니다. 가격이 없는 카탈로그 항목의 관측값은 null이며 상품 탭에 가격 미확인으로 표시됩니다. [가격 관측 소스](../src/sgl/PriceObservation.java) · [CD03 저장 상태와 불변 가격 모델](class-domain.png)
 
 ## 저장과 서비스 API
 
 `AppState`는 상품을 ID로 찾는 `Map<String, Product>`와 가격 관측 목록 `List<PriceObservation>`을 보유합니다. `Repository`가 읽기·쓰기를 담당하며 JSON 파일의 기존 필드 이름과 버전 1 구조를 사용합니다. 상태 복사본은 독립된 컬렉션을 갖고 불변 상품·관측값을 공유합니다. [상태](../src/sgl/AppState.java) · [저장소](../src/sgl/Repository.java)
 
-다섯 기능 서비스와 수집 조정·목록 관리 서비스는 같은 저장소와 시계를 사용하는 `Service`를 상속합니다. `ProductService`는 상품 조회·직접 입력·즐겨찾기를 담당합니다. `OnlineCollectionService`가 `ProductCollector`를 통해 공식 페이지를 수집하고 새 가격을 저장한 뒤 `TargetService`에 목표 판정을 요청합니다. `OnlineCatalog`가 수집 목록과 출처별 오류를 관리하고, `HttpPageClient`와 `OfficialPageParser`가 제한된 HTTP 읽기와 상품 ID·규격·가격·재고·조건 검증을 수행합니다. 공개 서비스 요청·결과와 JSON 입출력은 기존 맵 계약을 사용합니다. 입력 키, 결과 상태와 오류는 실행 창의 Javadoc API 매뉴얼에서 확인할 수 있습니다. [서비스 클래스 다이어그램](class-services.png) · [빌드와 검증](verification.md)
+다섯 기능 서비스와 수집 조정·목록 관리 서비스는 같은 저장소와 시계를 사용하는 `Service`를 상속합니다. `ProductService`는 상품 조회·직접 입력·즐겨찾기를 담당합니다. `OnlineCollectionService`가 `ProductCollector`를 통해 공식 페이지를 수집하고 새 가격을 저장한 뒤 `TargetService`에 목표 판정을 요청합니다. `OnlineCatalog`가 수집 목록과 출처별 오류를 관리하고, `HttpPageClient`와 `OfficialPageParser`가 제한된 HTTP 읽기와 상품 ID·규격·가격·재고·조건 검증을 수행합니다. 공개 서비스 요청·결과와 JSON 입출력은 기존 맵 계약을 사용합니다. 입력 키, 결과 상태와 오류는 실행 창의 Javadoc API 매뉴얼에서 확인할 수 있습니다. [CD02 유스케이스를 구현하는 서비스 클래스](class-services.png) · [빌드와 검증](verification.md)
 
 직접 입력과 피드의 관측은 출처별로 보존됩니다. 같은 시각이면 직접 확인 기록을 우선하며, 피드 갱신 실패가 별도 직접 입력 기록을 삭제하지 않습니다. 가격 조회 조건이 바뀌면 이전 결과를 비우고, 배경 갱신은 선택한 상품·지점을 유지합니다.
 
@@ -45,7 +45,7 @@ HTTP 읽기는 저장소 잠금 밖에서 수행합니다. 응답을 받은 후 
 
 검색은 최대 40개 결과, 수집 목록은 최대 100개입니다. 검색과 HTTP 요청은 SwingWorker에서 실행합니다. 수집 중 사용자가 항목을 중지·삭제하면 늦게 도착한 해당 응답은 반영하지 않습니다. 상품 규격이 바뀌면 수집 오류로 표시하며 삭제 후 새 규격으로 등록할 수 있습니다. 새 규격은 독립 ID를 사용해 과거 가격과 거래를 보존합니다.
 
-[사용자 수집 목록 클래스 다이어그램](class-collection.png) · [검색 및 등록 시퀀스](sequence-discovery.png)
+[CD04 검색·등록·저장 책임](class-collection.png)
 
 ## 신규 상품의 화면 선택 상태
 
@@ -73,9 +73,11 @@ TargetTab은 적용 기준이 없는 항목을 기준 없음으로 표시합니�
 
 서비스 요청과 결과는 `Map<String, Object>`입니다. 상품은 `Product`, 관측은 `PriceObservation` 레코드로 표현합니다. 그림의 FN05는 `TargetService.managePurchaseTargets`를 뜻합니다. 입력 키와 상태값의 전체 계약은 Javadoc을 확인하세요.
 
-- [가계부 저장](sequence-ledger.png): 입력 검증 → 원자적 저장 → 영향을 받은 월의 집계 반환.
-- [예산·계획 저장](sequence-budget.png): 입력 검증 → 저장 요청 시 원자적 저장 → 소계·잔여 예산 계산. 저장 실패는 계산 전에 반환합니다. 조회와 초안 편집은 저장하지 않습니다.
-- [단가 비교·이력](sequence-prices.png): 기준 상품에서 규격·단위를 구하고 같은 조건의 현재 순위 또는 날짜별 정상 기록을 조회합니다.
-- [수집 후 목표 평가](sequence-targets.png): 수집 저장 성공 후 일반 메서드 호출로 EVALUATE를 요청합니다. 당일 알림 기록 저장에 성공한 결과만 화면에 표시합니다.
+- 입력을 검증한 뒤 거래를 저장하고 해당 월의 합계를 반환합니다. [SD01 실제 지출 저장](sequence-ledger.png)
+- 장보기 계획을 저장하면 소계와 남은 예산을 계산합니다. 조회하거나 초안을 편집하는 동안에는 저장을 보류합니다. [SD02 예산과 장보기 계획 저장](sequence-budget.png)
+- 활성 목록의 가격을 수집하고 판매처별 성공·실패 결과를 반환합니다. 사용자는 상품 화면에서 재시도할 수 있습니다. [SD03 상품 가격 자동 수집과 재시도](sequence-collection.png)
+- 같은 규격과 판매 조건으로 단가를 환산해 현재 순위와 날짜별 이력을 조회합니다. [SD04 현재 가격 비교와 과거 통계](sequence-prices.png)
+- 새 가격을 저장하면 목표 충족 여부를 평가하고 당일 알림 기록을 저장한 뒤 알림을 표시합니다. [SD05 목표 가격 도달 알림](sequence-targets.png)
+- 검색한 상품의 규격과 가격을 확인하고 등록하면 향후 수집 목록에 포함됩니다. [SD06 상품 검색과 수집 목록 등록](sequence-discovery.png)
 
 그림은 주요 호출 순서를 요약합니다. 숫자는 본문과 대응하는 메시지 번호이며 생략된 사용자 입력 메시지는 화면 설명을 참고하세요. 함수의 시각은 생성자에 주입한 Clock에서 구합니다. 별도의 Request/Result 클래스나 PriceUpdated 이벤트 버스는 없습니다. 단가 나눗셈은 BigDecimal의 DECIMAL128 정밀도로 수행하고 화면 표시 자릿수는 따로 적용합니다.
